@@ -76,11 +76,29 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 
 .gantt-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); position: relative; }
 .gantt-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; min-width: 1200px; }
+
+/* Always-visible scrollbar container */
+.gantt-outer {
+  display: flex; flex-direction: column;
+  height: calc(100vh - 220px); /* fills visible window minus topbar/controls */
+  min-height: 400px;
+}
+.gantt-outer .gantt-wrap {
+  flex: 1; overflow-x: auto; overflow-y: auto;
+  border-radius: 12px;
+}
+/* Force scrollbar always visible on the wrap */
+.gantt-outer .gantt-wrap::-webkit-scrollbar { height: 10px; width: 8px; }
+.gantt-outer .gantt-wrap::-webkit-scrollbar-track { background: var(--surface2); border-radius: 99px; }
+.gantt-outer .gantt-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+.gantt-outer .gantt-wrap::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+.gantt-outer .gantt-wrap::-webkit-scrollbar-corner { background: var(--surface2); }
 .gantt-table th {
   background: var(--surface2); color: var(--text-muted); font-family: var(--mono);
   font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
   padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);
   white-space: nowrap; position: sticky; top: 0; z-index: 2;
+  box-shadow: 0 1px 0 var(--border);
 }
 /* Sticky left columns — headers */
 .gantt-table th.col-drag  { position: sticky; left: 0;   z-index: 3; min-width: 24px;  width: 24px; }
@@ -633,8 +651,10 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
     <button class="toolbar-btn" onclick="resetData()" title="Reset to original Gantt data"><span class="icon">↺</span> Reset Data</button>
     <span style="font-size:11px;color:var(--text-muted);margin-left:4px;">Click any cell to edit · Drag ⠿ to reorder · Click status to cycle</span>
   </div>
-  <div class="gantt-wrap">
-    <table class="gantt-table" id="gantt-table"></table>
+  <div class="gantt-outer">
+    <div class="gantt-wrap">
+      <table class="gantt-table" id="gantt-table"></table>
+    </div>
   </div>
 </div>
 
