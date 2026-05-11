@@ -2351,9 +2351,21 @@ const SYSTEM_PROMPT = () => {
   const taskSummary = tasks.map(t=>`[${t.id}] ${t.workStream} > ${t.task} (Owner: ${t.owner}, Status: ${t.status}${t.notes?', Notes: '+t.notes:''})`).join('\n');
   const complete = tasks.filter(t=>t.status==='Complete').length;
   const inprog = tasks.filter(t=>t.status==='In Progress').length;
+
+  // BOM summary
+  const bomTotal = bomItems.length;
+  const bomBudget = bomItems.reduce((s,i)=>(s+(Number(i.unitCost)||0)*(Number(i.qty)||0)),0);
+  const bomReceived = bomItems.filter(i=>i.status==='Received').length;
+  const bomOrdered = bomItems.filter(i=>i.status==='Ordered').length;
+  const bomPending = bomItems.filter(i=>i.status==='Pending').length;
+  const bomBackordered = bomItems.filter(i=>i.status==='Backordered').length;
+  const bomSummaryStr = bomItems.length > 0
+    ? bomItems.map(i=>`  - [${i.status}] ${i.name} | Category: ${i.category||'—'} | Vendor: ${i.vendor||'TBD'} | Qty: ${i.qty||0} | Unit: $${Number(i.unitCost||0).toFixed(2)} | Total: $${((Number(i.unitCost)||0)*(Number(i.qty)||0)).toFixed(2)} | Lead: ${i.leadTime||'—'}${i.notes?' | Notes: '+i.notes:''}`).join('\n')
+    : '  (No BOM items entered yet — Linda can import or add items in the BOM tab)';
+
   return `You are the AI project assistant for the Bubbles Reactor project — an atmospheric water generation system being developed by a small engineering team.
 
-Today's date: March 26, 2026.
+Today's date: May 11, 2026.
 
 PROJECT SNAPSHOT:
 - Total tasks: ${tasks.length}
@@ -2367,13 +2379,22 @@ TEAM MEMBERS: Makoto (Systems Engineering Lead), Priyanka (Project Manager/Syste
 ALL TASKS:
 ${taskSummary}
 
+BOM SNAPSHOT:
+- Total items: ${bomTotal}
+- Estimated budget: $${bomBudget.toFixed(2)}
+- Received: ${bomReceived} | Ordered: ${bomOrdered} | Pending: ${bomPending} | Backordered: ${bomBackordered}
+
+BOM LINE ITEMS:
+${bomSummaryStr}
+
 INSTRUCTIONS:
 - When asked what someone should work on, give concrete task names from the list above, organized by priority
 - For Monday briefings, give EACH team member their top 3-5 tasks to focus on
 - For Friday check-ins, generate specific questions for each person about their tasks
-- When asked to mark tasks complete, confirm which tasks you're updating and instruct the user to click the status badge in the Gantt view or say "Mark task [X] as complete"
+- When asked to mark tasks complete, confirm which tasks you're updating and instruct the user to click the status badge in the Gantt view
+- For BOM questions, reference the live BOM data above — pending items, budget totals, missing vendors, long lead items etc.
 - Be concise but thorough. Use the owner and work stream context to give targeted advice.
-- Current week is 3/23. Tasks should be prioritized by work stream dependency order: Requirements → PFD → CAD → Sim → Instrumentation → Ordering → Build → Test.`;
+- Tasks should be prioritized by work stream dependency order: Requirements → PFD → CAD → Sim → Instrumentation → Ordering → Build → Test.`;
 };
 
 let chatHistory = [];
@@ -2515,6 +2536,9 @@ async function runSkill(type) {
   output.textContent = 'Generating...';
 
   const taskSummary = tasks.map(t=>`[${t.id}] ${t.workStream} > ${t.task} (${t.owner}, ${t.status}${t.notes?', '+t.notes:''})`).join('\n');
+  const bomSummary = bomItems.length > 0
+    ? bomItems.map(i=>`  [${i.status}] ${i.name} | Vendor: ${i.vendor||'TBD'} | Qty: ${i.qty||0} | Total: $${((Number(i.unitCost)||0)*(Number(i.qty)||0)).toFixed(2)} | Lead: ${i.leadTime||'—'}`).join('\n')
+    : '  (No BOM items yet)';
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages',{
@@ -2525,7 +2549,7 @@ async function runSkill(type) {
         max_tokens:1000,
         messages:[{
           role:'user',
-          content: SKILL_PROMPTS[type] + '\n\nFULL TASK LIST:\n' + taskSummary
+          content: SKILL_PROMPTS[type] + '\n\nFULL TASK LIST:\n' + taskSummary + '\n\nBOM STATUS:\n' + bomSummary
         }]
       })
     });
