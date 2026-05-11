@@ -602,6 +602,19 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
   cursor: pointer; font-family: var(--sans); transition: all .15s;
 }
 
+/* ---- GITHUB SYNC PANEL ---- */
+.gh-panel {
+  position: fixed; top: 56px; right: 0; width: 380px; max-width: 95vw;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 0 0 0 12px; box-shadow: -4px 4px 24px rgba(0,0,0,.4);
+  z-index: 150; padding: 20px; display: none; flex-direction: column; gap: 14px;
+}
+.gh-panel.open { display: flex; }
+.gh-panel-title { font-family: var(--mono); font-size: 11px; color: var(--accent2); text-transform: uppercase; letter-spacing: .08em; }
+.gh-status { font-size: 11px; font-family: var(--mono); padding: 8px 10px; border-radius: 6px; background: var(--surface2); color: var(--text-muted); line-height: 1.6; white-space: pre-wrap; max-height: 100px; overflow-y: auto; }
+.gh-status.ok { color: var(--green); }
+.gh-status.err { color: var(--red); }
+
 /* ---- MOBILE NAV ---- */
 .hamburger {
   display: none; flex-direction: column; gap: 5px; cursor: pointer;
@@ -1288,6 +1301,35 @@ What would you like to know?</div>
     <button class="sync-btn" onclick="pushToFirebase()">↑ Push</button>
     <button class="sync-btn sync-btn-pull" onclick="pullFromFirebase()" style="background:var(--surface2);color:var(--accent2);border:1px solid var(--border);">↓ Pull</button>
     <button class="sync-btn" onclick="changeUserName()" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);">✎ Name</button>
+    <button class="sync-btn" onclick="toggleGhPanel()" id="gh-btn" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);" title="GitHub BOM sync">⑂ GitHub</button>
+  </div>
+</div>
+
+<!-- GITHUB SYNC PANEL -->
+<div class="gh-panel" id="gh-panel">
+  <div class="gh-panel-title">⑂ GitHub BOM Auto-Sync</div>
+  <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">
+    Commits BOM data as <code style="color:var(--accent2);font-family:var(--mono);font-size:11px;">bom.json</code> to your GitHub repo whenever the BOM changes. Token is stored only in this browser.
+  </div>
+  <div class="field-group">
+    <div class="field-label">GitHub Personal Access Token</div>
+    <input class="field-input" id="gh-token-input" type="password" placeholder="github_pat_..." autocomplete="off"
+      style="font-family:var(--mono);font-size:11px;">
+    <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">
+      Settings → Developer settings → Personal access tokens → Tokens (classic) → check <strong>repo</strong>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn-primary" onclick="saveGhToken()" style="flex:1;">Save & Test</button>
+    <button class="btn-secondary" onclick="pushBomToGithub()" id="gh-push-btn" style="display:none;">↑ Push BOM Now</button>
+    <button class="btn-secondary" onclick="clearGhToken()" id="gh-clear-btn" style="display:none;color:var(--red);">Revoke</button>
+  </div>
+  <div class="gh-status" id="gh-status" style="display:none;"></div>
+  <div style="font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:10px;">
+    📖 Once set up, BOM is readable at:<br>
+    <code style="color:var(--accent2);font-family:var(--mono);font-size:10px;word-break:break-all;">
+      https://raw.githubusercontent.com/WFA-Kasey-Adams/Bubbles_Dashboard/main/bom.json
+    </code>
   </div>
 </div>
 
@@ -2271,8 +2313,13 @@ function resetData(){
 // close modal on overlay click
 document.addEventListener('click', e=>{
   if(e.target.id==='edit-modal') closeModal();
+  const ghPanel = document.getElementById('gh-panel');
+  const ghBtn = document.getElementById('gh-btn');
+  if(ghPanel && ghPanel.classList.contains('open') && !ghPanel.contains(e.target) && e.target !== ghBtn){
+    ghPanel.classList.remove('open');
+  }
 });
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeModal(); document.getElementById('gh-panel').classList.remove('open'); } });
 
 function populateFilters(){
   const owners = [...new Set(tasks.map(t=>t.owner))].filter(Boolean).sort();
@@ -3153,6 +3200,7 @@ function loadBom(){
 function saveBom(){
   localStorage.setItem('bubbles_bom_v2', JSON.stringify(bomItems));
   scheduleBomPush();
+  scheduleGhBomPush();
 }
 
 let bomPushDebounce = null;
@@ -3617,10 +3665,133 @@ function downloadFile(filename, mimeType, content){
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
 }
 
+// ===== GITHUB BOM SYNC =====
+const GH_REPO = 'WFA-Kasey-Adams/Bubbles_Dashboard';
+const GH_FILE = 'bom.json';
+const GH_API  = `https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`;
+
+let ghToken = '';
+let ghPushDebounce = null;
+
+function loadGhToken(){
+  ghToken = localStorage.getItem('bubbles_gh_token') || '';
+  if(ghToken){
+    document.getElementById('gh-token-input').value = '••••••••••••••••';
+    document.getElementById('gh-push-btn').style.display = 'inline-flex';
+    document.getElementById('gh-clear-btn').style.display = 'inline-flex';
+    document.getElementById('gh-btn').style.color = 'var(--green)';
+    document.getElementById('gh-btn').style.borderColor = 'rgba(16,185,129,.3)';
+  }
+}
+
+function toggleGhPanel(){
+  const panel = document.getElementById('gh-panel');
+  panel.classList.toggle('open');
+}
+
+function saveGhToken(){
+  const input = document.getElementById('gh-token-input').value.trim();
+  if(!input || input.startsWith('•')){ ghLog('Enter a valid token first.', 'err'); return; }
+  ghToken = input;
+  localStorage.setItem('bubbles_gh_token', ghToken);
+  document.getElementById('gh-push-btn').style.display = 'inline-flex';
+  document.getElementById('gh-clear-btn').style.display = 'inline-flex';
+  document.getElementById('gh-btn').style.color = 'var(--green)';
+  document.getElementById('gh-btn').style.borderColor = 'rgba(16,185,129,.3)';
+  document.getElementById('gh-token-input').value = '••••••••••••••••';
+  ghLog('Token saved. Testing connection…', 'info');
+  pushBomToGithub(true);
+}
+
+function clearGhToken(){
+  if(!confirm('Remove GitHub token from this browser?')) return;
+  ghToken = '';
+  localStorage.removeItem('bubbles_gh_token');
+  document.getElementById('gh-token-input').value = '';
+  document.getElementById('gh-push-btn').style.display = 'none';
+  document.getElementById('gh-clear-btn').style.display = 'none';
+  document.getElementById('gh-btn').style.color = '';
+  document.getElementById('gh-btn').style.borderColor = '';
+  ghLog('Token removed.', 'info');
+}
+
+function ghLog(msg, type='info'){
+  const el = document.getElementById('gh-status');
+  el.style.display = 'block';
+  el.className = 'gh-status' + (type==='ok'?' ok':type==='err'?' err':'');
+  el.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+}
+
+async function pushBomToGithub(silent=false){
+  if(!ghToken){ if(!silent) ghLog('No token saved. Enter your GitHub token first.', 'err'); return; }
+  if(!silent) ghLog('Pushing BOM to GitHub…', 'info');
+
+  try {
+    // Get current file SHA (needed for updates)
+    let sha = null;
+    const getResp = await fetch(GH_API, {
+      headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if(getResp.ok){
+      const existing = await getResp.json();
+      sha = existing.sha;
+    } else if(getResp.status !== 404){
+      throw new Error(`GitHub API error: ${getResp.status}`);
+    }
+
+    // Build BOM JSON with metadata
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      exportedBy: fbConfig.user || 'Dashboard',
+      repo: GH_REPO,
+      totalItems: bomItems.length,
+      totalBudget: bomItems.reduce((s,i)=>(s+(Number(i.unitCost)||0)*(Number(i.qty)||0)),0),
+      items: bomItems
+    };
+
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+    const body = {
+      message: `BOM update — ${bomItems.length} items · ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
+      content,
+      ...(sha ? { sha } : {})
+    };
+
+    const putResp = await fetch(GH_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${ghToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if(!putResp.ok){
+      const err = await putResp.json().catch(()=>({}));
+      throw new Error(err.message || `HTTP ${putResp.status}`);
+    }
+
+    ghLog(`✓ BOM committed — ${bomItems.length} items pushed to GitHub`, 'ok');
+    document.getElementById('gh-btn').title = `Last pushed: ${new Date().toLocaleTimeString()}`;
+
+  } catch(e){
+    ghLog(`Push failed: ${e.message}`, 'err');
+    console.warn('GitHub push error:', e);
+  }
+}
+
+// Auto-push BOM to GitHub after changes (debounced 8s to avoid spam)
+function scheduleGhBomPush(){
+  if(!ghToken) return;
+  clearTimeout(ghPushDebounce);
+  ghPushDebounce = setTimeout(()=>{ pushBomToGithub(true); }, 8000);
+}
+
 // ===== INIT =====
 function init(){
   loadTasks();
   loadBom();
+  loadGhToken();
   nextId = Math.max(...tasks.map(t=>parseInt(t.id)||0), 99) + 1;
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
   populateFilters();
