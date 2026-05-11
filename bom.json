@@ -1,8 +1,20 @@
 {
-  "exportedAt": "2026-05-11T21:50:29.386Z",
+  "exportedAt": "2026-05-11T21:57:00.000Z",
   "exportedBy": "Kasey",
   "repo": "WFA-Kasey-Adams/Bubbles_Dashboard",
-  "totalItems": 0,
-  "totalBudget": 0,
-  "items": []
+  "totalItems": 1,
+  "totalBudget": 100,
+  "items": [
+    {
+      "id": "b1778536601996",
+      "name": "Test",
+      "category": "Test",
+      "vendor": "Test",
+      "qty": 1,
+      "unitCost": 100,
+      "status": "Pending",
+      "leadTime": "1 week",
+      "notes": ""
+    }
+  ]
 }
