@@ -74,15 +74,35 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 }
 .filter-select:focus, .filter-input:focus { border-color: var(--accent); }
 
-.gantt-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
-.gantt-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1200px; }
+.gantt-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); position: relative; }
+.gantt-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; min-width: 1200px; }
 .gantt-table th {
   background: var(--surface2); color: var(--text-muted); font-family: var(--mono);
   font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
   padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);
-  white-space: nowrap; position: sticky; top: 0;
+  white-space: nowrap; position: sticky; top: 0; z-index: 2;
 }
-.gantt-table th.date-col { text-align: center; width: 52px; }
+/* Sticky left columns — headers */
+.gantt-table th.col-drag  { position: sticky; left: 0;   z-index: 3; min-width: 24px;  width: 24px; }
+.gantt-table th.col-id    { position: sticky; left: 24px; z-index: 3; min-width: 36px;  width: 36px; }
+.gantt-table th.col-ws    { position: sticky; left: 60px; z-index: 3; min-width: 130px; width: 130px; }
+.gantt-table th.col-task  { position: sticky; left: 190px; z-index: 3; min-width: 260px; width: 260px; }
+.gantt-table th.col-owner { position: sticky; left: 450px; z-index: 3; min-width: 90px;  width: 90px; }
+.gantt-table th.col-status{ position: sticky; left: 540px; z-index: 3; min-width: 90px;  width: 90px; }
+/* Sticky left columns — cells */
+.gantt-table td.col-drag  { position: sticky; left: 0;    z-index: 1; background: inherit; }
+.gantt-table td.col-id    { position: sticky; left: 24px;  z-index: 1; background: inherit; }
+.gantt-table td.col-ws    { position: sticky; left: 60px;  z-index: 1; background: inherit; }
+.gantt-table td.col-task  { position: sticky; left: 190px; z-index: 1; background: inherit; }
+.gantt-table td.col-owner { position: sticky; left: 450px; z-index: 1; background: inherit; }
+.gantt-table td.col-status{ position: sticky; left: 540px; z-index: 1; background: inherit; box-shadow: 2px 0 6px rgba(0,0,0,.25); }
+.gantt-table th.col-status{ box-shadow: 2px 0 6px rgba(0,0,0,.25); }
+/* Row backgrounds so sticky cells don't show through */
+.gantt-table tbody tr { background: var(--surface); }
+.gantt-table tbody tr:hover { background: #1c2436; }
+.gantt-table tbody tr:hover td { background: inherit; }
+.gantt-table tr.ws-header { background: rgba(6,182,212,.06); }
+.gantt-table tr.ws-header td { background: rgba(6,182,212,.06); }
 .month-header { background: var(--surface2); color: var(--accent); font-family: var(--mono); font-size: 10px;
   text-transform: uppercase; letter-spacing: .08em; padding: 6px 12px; text-align: center;
   border-bottom: 1px solid var(--border); }
@@ -1413,14 +1433,14 @@ function renderGantt(){
 
   const table = document.getElementById('gantt-table');
   let html = '<thead><tr>';
-  html += '<th style="width:24px"></th><th style="width:36px">#</th><th style="min-width:120px">Work Stream</th><th style="min-width:260px">Task</th><th style="min-width:90px">Owner</th><th style="min-width:90px">Status</th>';
-  for(const d of DATE_COLS) html += `<th class="date-col">${d}</th>`;
+  html += '<th class="col-drag"></th><th class="col-id">#</th><th class="col-ws">Work Stream</th><th class="col-task">Task</th><th class="col-owner">Owner</th><th class="col-status">Status</th>';
+  for(const d of DATE_COLS) html += `<th class="date-col" style="text-align:center;width:52px;">${d}</th>`;
   html += '<th style="width:28px"></th></tr></thead><tbody id="gantt-body">';
 
   for(const ws of wsOrder){
     html += `<tr class="ws-header" data-ws="${esc(ws)}">
-      <td colspan="2"></td>
-      <td colspan="4"><span class="task-ws-tag ${wsClass(ws)}">${ws}</span>
+      <td class="col-drag"></td><td class="col-id"></td>
+      <td class="col-ws col-task" colspan="4" style="left:60px;"><span class="task-ws-tag ${wsClass(ws)}">${ws}</span>
         <button class="toolbar-btn" style="display:inline-flex;margin-left:8px;padding:2px 8px;font-size:11px" onclick="openAddTask('${esc(ws)}')">＋ Add</button>
       </td>
       ${DATE_COLS.map(()=>'<td></td>').join('')}<td></td></tr>`;
@@ -1445,15 +1465,15 @@ function buildRow(t){
   }).join('');
 
   return `<tr data-id="${t.id}" draggable="true">
-    <td><span class="drag-handle" title="Drag to reorder">⠿</span></td>
-    <td class="task-id">${t.id}</td>
-    <td class="task-name editable-cell" onclick="openEdit('${t.id}')" title="Click to edit">${t.workStream}</td>
-    <td class="task-name editable-cell" onclick="openEdit('${t.id}')" title="Click to edit">
+    <td class="col-drag"><span class="drag-handle" title="Drag to reorder">⠿</span></td>
+    <td class="col-id task-id">${t.id}</td>
+    <td class="col-ws task-name editable-cell" onclick="openEdit('${t.id}')" title="Click to edit">${t.workStream}</td>
+    <td class="col-task task-name editable-cell" onclick="openEdit('${t.id}')" title="Click to edit">
       <span>${t.task}</span>
       ${t.notes?`<div style="font-size:10px;color:var(--text-muted);margin-top:2px">${t.notes}</div>`:''}
     </td>
-    <td onclick="openEdit('${t.id}')" style="cursor:pointer"><span class="owner-badge ${ownerClass(t.owner)}">${t.owner}</span></td>
-    <td><span class="status-badge ${sc}" onclick="cycleStatus('${t.id}')" title="Click to cycle status">${statusLabel(t.status)}</span></td>
+    <td class="col-owner" onclick="openEdit('${t.id}')" style="cursor:pointer"><span class="owner-badge ${ownerClass(t.owner)}">${t.owner}</span></td>
+    <td class="col-status"><span class="status-badge ${sc}" onclick="cycleStatus('${t.id}')" title="Click to cycle status">${statusLabel(t.status)}</span></td>
     ${dateCells}
     <td><button class="delete-btn" onclick="deleteTask('${t.id}')" title="Delete task">✕</button></td>
   </tr>`;
