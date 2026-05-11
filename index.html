@@ -736,6 +736,12 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 
 /* Small phones */
 
+/* BOM collapsible categories */
+.bom-cat-header { cursor: pointer; user-select: none; }
+.bom-cat-header:hover td { background: rgba(6,182,212,.12) !important; }
+.bom-cat-chevron { transition: transform .2s; display: inline-block; margin-right: 6px; font-size: 10px; }
+.bom-cat-chevron.collapsed { transform: rotate(-90deg); }
+
 /* ---- BOM ---- */
 .bom-summary {
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px;
@@ -1160,75 +1166,70 @@ What would you like to know?</div>
 
 <!-- BOM -->
 <div id="tab-bom" class="main">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-    <div>
-      <div style="font-size:22px;font-weight:600;color:var(--text)">Bill of Materials</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">Procurement tracker · owned by Linda · synced to Firebase</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="toolbar-btn" onclick="openAddBomItem()" style="color:var(--green);border-color:rgba(16,185,129,.3);">＋ Add Item</button>
-      <button class="toolbar-btn" onclick="triggerBomImport()">↑ Import CSV / Excel</button>
-      <input type="file" id="bom-import-input" accept=".csv,.xls,.xlsx" style="display:none" onchange="handleBomImport(event)">
+  <div style="margin-bottom:20px;">
+    <div style="font-size:22px;font-weight:600;color:var(--text)">Bill of Materials</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">Purchased components & long-lead orders · unit cost × qty = total · synced to Firebase & GitHub</div>
+  </div>
+  <!-- Status legend -->
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;">
+    <span style="font-size:10px;color:var(--text-muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;margin-right:4px;">Status:</span>
+    <span class="status-badge" style="background:rgba(100,116,139,.12);color:var(--text-muted);border:1px solid rgba(100,116,139,.25);cursor:default">Not ordered</span>
+    <span class="status-badge" style="background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.3);cursor:default">In progress</span>
+    <span class="status-badge" style="background:rgba(59,130,246,.12);color:#93c5fd;border:1px solid rgba(59,130,246,.3);cursor:default">Ordered</span>
+    <span class="status-badge" style="background:rgba(16,185,129,.12);color:#6ee7b7;border:1px solid rgba(16,185,129,.3);cursor:default">Received</span>
+    <span class="status-badge" style="background:rgba(139,92,246,.12);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);cursor:default">Partial</span>
+    <span class="status-badge" style="background:rgba(6,182,212,.12);color:#67e8f9;border:1px solid rgba(6,182,212,.3);cursor:default">On hold</span>
+    <span class="status-badge" style="background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.3);cursor:default">Cancelled</span>
+    <div style="margin-left:auto;display:flex;gap:8px;">
       <button class="toolbar-btn" onclick="exportBomCSV()">↓ Export CSV</button>
       <button class="toolbar-btn" onclick="exportBomExcel()">↓ Export Excel</button>
     </div>
   </div>
-
-  <!-- Summary stats -->
-  <div class="bom-summary">
-    <div class="bom-stat" style="--bom-accent:var(--accent)">
-      <div class="bom-stat-label">Total Items</div>
-      <div class="bom-stat-value" id="bom-stat-total">—</div>
-      <div class="bom-stat-sub">line items</div>
-    </div>
-    <div class="bom-stat" style="--bom-accent:var(--amber)">
-      <div class="bom-stat-label">Total Budget</div>
-      <div class="bom-stat-value" id="bom-stat-budget">—</div>
-      <div class="bom-stat-sub">estimated cost</div>
-    </div>
-    <div class="bom-stat" style="--bom-accent:var(--green)">
-      <div class="bom-stat-label">Received</div>
-      <div class="bom-stat-value" id="bom-stat-received">—</div>
-      <div class="bom-stat-sub" id="bom-stat-received-pct">of items</div>
-    </div>
-    <div class="bom-stat" style="--bom-accent:var(--accent2)">
-      <div class="bom-stat-label">Ordered</div>
-      <div class="bom-stat-value" id="bom-stat-ordered">—</div>
-      <div class="bom-stat-sub">items on order</div>
-    </div>
-    <div class="bom-stat" style="--bom-accent:var(--red)">
-      <div class="bom-stat-label">Pending</div>
-      <div class="bom-stat-value" id="bom-stat-pending">—</div>
-      <div class="bom-stat-sub">not yet ordered</div>
-    </div>
-  </div>
-
-  <!-- Toolbar -->
-  <div class="bom-toolbar">
-    <input class="bom-search" id="bom-search" placeholder="Search items, vendors..." oninput="renderBom()">
-    <select class="filter-select" id="bom-filter-status" onchange="renderBom()">
-      <option value="">All Statuses</option>
-      <option value="Pending">Pending</option>
-      <option value="Quoted">Quoted</option>
-      <option value="Ordered">Ordered</option>
-      <option value="Received">Received</option>
-      <option value="Backordered">Backordered</option>
-    </select>
-    <select class="filter-select" id="bom-filter-category" onchange="renderBom()">
-      <option value="">All Categories</option>
-    </select>
-    <span id="bom-count" style="font-size:12px;color:var(--text-muted);"></span>
-  </div>
-
+  <!-- Stats -->
+  <div class="stats-row" id="bom-stats" style="margin-bottom:20px;"></div>
   <!-- Table -->
-  <div class="bom-table-wrap">
-    <table class="bom-table" id="bom-table"></table>
+  <div class="gantt-wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="section-title">Component line items · click any row to edit</span>
+        <select id="bom-cat-filter" class="filter-select" style="font-size:11px;padding:4px 8px;" onchange="renderBom()">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+      <button class="toolbar-btn" onclick="openAddBomItem()" style="color:var(--green);border-color:rgba(16,185,129,.3);"><span class="icon">＋</span> Add component</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="gantt-table" id="bom-table" style="min-width:1000px;">
+        <thead>
+          <tr>
+            <th style="width:44px">#</th>
+            <th>Component</th>
+            <th style="width:90px">Owner</th>
+            <th style="width:120px">Vendor</th>
+            <th style="width:110px">Proc. Status</th>
+            <th style="width:70px;text-align:center">Lead (BD)</th>
+            <th style="width:95px;text-align:right">Unit Cost</th>
+            <th style="width:55px;text-align:center">Qty</th>
+            <th style="width:95px;text-align:right">Total</th>
+            <th style="width:28px"></th>
+          </tr>
+        </thead>
+        <tbody id="bom-body"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="7" style="text-align:right;font-size:11px;color:var(--text-muted);padding:10px 12px;background:var(--surface2);border-top:1px solid var(--border);">Grand total</td>
+            <td style="text-align:right;font-family:var(--mono);font-size:13px;color:var(--green);font-weight:700;padding:10px 12px;background:var(--surface2);border-top:1px solid var(--border);" id="bom-grand-total">$—</td>
+            <td style="background:var(--surface2);border-top:1px solid var(--border);"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   </div>
 </div>
 
 <!-- BOM ADD/EDIT MODAL -->
 <div class="modal-overlay" id="bom-modal">
-  <div class="modal">
+  <div class="modal" style="width:620px;max-width:96vw;max-height:92vh;overflow-y:auto;">
     <div class="modal-header">
       <div class="modal-title" id="bom-modal-title">Add BOM Item</div>
       <button class="modal-close" onclick="closeBomModal()">×</button>
@@ -1238,46 +1239,105 @@ What would you like to know?</div>
         <div class="field-label">Item Name</div>
         <input class="field-input" id="bom-modal-name" type="text" placeholder="e.g. Microchannel Heat Exchanger">
       </div>
+      <div class="field-group">
+        <div class="field-label">Description / Spec</div>
+        <input class="field-input" id="bom-modal-description" type="text" placeholder="e.g. 1500x1700 Finless Microchannel HX...">
+      </div>
       <div class="field-row">
         <div class="field-group">
           <div class="field-label">Category</div>
-          <input class="field-input" id="bom-modal-category" type="text" list="bom-category-list" placeholder="e.g. Heat Exchangers">
-          <datalist id="bom-category-list"></datalist>
+          <select class="field-select" id="bom-modal-category" onchange="handleBomCatChange(this)">
+            <option value="">— Select category —</option>
+            <option value="Air Preheat">Air Preheat</option>
+            <option value="Condenser">Condenser</option>
+            <option value="Connectors">Connectors</option>
+            <option value="Dampers & Fans">Dampers & Fans</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Heat Exchangers">Heat Exchangers</option>
+            <option value="Heating">Heating</option>
+            <option value="PLC & Controls">PLC & Controls</option>
+            <option value="Plumbing">Plumbing</option>
+            <option value="Sensors">Sensors</option>
+            <option value="Sheet Metal">Sheet Metal</option>
+            <option value="Structure & Hardware">Structure & Hardware</option>
+            <option value="Tools">Tools</option>
+            <option value="Trailer & Platform">Trailer & Platform</option>
+            <option value="Unorganized">Unorganized</option>
+            <option value="__new__">＋ New Category…</option>
+          </select>
+          <input class="field-input" id="bom-modal-category-new" type="text" placeholder="Type new category name…" style="display:none;margin-top:6px;">
         </div>
         <div class="field-group">
-          <div class="field-label">Vendor</div>
-          <input class="field-input" id="bom-modal-vendor" type="text" placeholder="e.g. Hylita">
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <div class="field-label">Qty</div>
-          <input class="field-input" id="bom-modal-qty" type="number" min="1" value="1" placeholder="1">
-        </div>
-        <div class="field-group">
-          <div class="field-label">Unit Cost ($)</div>
-          <input class="field-input" id="bom-modal-unitcost" type="number" min="0" step="0.01" placeholder="0.00">
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field-group">
-          <div class="field-label">Status</div>
-          <select class="field-select" id="bom-modal-status">
-            <option value="Pending">Pending</option>
-            <option value="Quoted">Quoted</option>
-            <option value="Ordered">Ordered</option>
-            <option value="Received">Received</option>
-            <option value="Backordered">Backordered</option>
+          <div class="field-label">Owner</div>
+          <select class="field-select" id="bom-modal-owner">
+            <option value="Makoto">Makoto</option>
+            <option value="Priyanka">Priyanka</option>
+            <option value="Chris">Chris</option>
+            <option value="Kasey">Kasey</option>
+            <option value="Andrew">Andrew</option>
+            <option value="Linda">Linda</option>
+            <option value="Madeleine">Madeleine</option>
+            <option value="Alex">Alex</option>
+            <option value="Unassigned">Unassigned</option>
           </select>
         </div>
+      </div>
+      <div class="field-row">
         <div class="field-group">
-          <div class="field-label">Lead Time</div>
-          <input class="field-input" id="bom-modal-leadtime" type="text" placeholder="e.g. 22 days">
+          <div class="field-label">Manufacturer</div>
+          <input class="field-input" id="bom-modal-manufacturer" type="text" placeholder="e.g. Hylita">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Vendor / Supplier</div>
+          <input class="field-input" id="bom-modal-vendor" type="text" placeholder="e.g. McMaster">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Part Number</div>
+          <input class="field-input" id="bom-modal-partnum" type="text" placeholder="e.g. HC2A-S(H)" style="font-family:var(--mono);font-size:12px;">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Proc. Status</div>
+          <select class="field-select" id="bom-modal-status">
+            <option value="Not ordered">Not ordered</option>
+            <option value="Quoted">Quoted</option>
+            <option value="In progress">In progress</option>
+            <option value="Ordered">Ordered</option>
+            <option value="Partial">Partial</option>
+            <option value="Received">Received</option>
+            <option value="On hold">On hold</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Unit Cost ($)</div>
+          <input class="field-input" id="bom-modal-unitcost" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateBomModalTotal()">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Qty</div>
+          <input class="field-input" id="bom-modal-qty" type="number" min="1" step="1" placeholder="1" oninput="updateBomModalTotal()">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Total Cost</div>
+          <div class="field-input" id="bom-modal-total" style="background:var(--surface2);color:var(--green);font-family:var(--mono);display:flex;align-items:center;font-weight:600;">—</div>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Lead Time (BD)</div>
+          <input class="field-input" id="bom-modal-leadtime" type="text" placeholder="e.g. 20">
         </div>
       </div>
       <div class="field-group">
-        <div class="field-label">Notes</div>
-        <input class="field-input" id="bom-modal-notes" type="text" placeholder="Any notes, part numbers, links...">
+        <div class="field-label">Notes / Delivery Info</div>
+        <input class="field-input" id="bom-modal-notes" type="text" placeholder="Delivery tracking, links, special notes...">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Linked Gantt Task # <span style="color:var(--text-muted);font-weight:400;">(auto-set by category)</span></div>
+        <input class="field-input" id="bom-modal-linked-task" type="text" placeholder="e.g. 141" style="font-family:var(--mono);">
       </div>
     </div>
     <div class="modal-footer">
@@ -1482,14 +1542,77 @@ What would you like to know?</div>
             <option value="Complete">Complete</option>
           </select>
         </div>
-        <div class="field-group">
-          <div class="field-label">Scheduled Weeks</div>
-          <div id="modal-dates" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 0;"></div>
+      <div class="field-group">
+        <div class="field-label">Scheduled Weeks</div>
+        <div id="modal-dates" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 0;"></div>
+      </div>
+      <!-- BOM Toggle -->
+      <div id="modal-bom-toggle" onclick="toggleBomFields()"
+        style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:8px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);transition:all .15s;">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <span id="modal-bom-toggle-title" style="font-size:12px;font-weight:600;color:var(--text);">Include in BOM</span>
+          <span id="modal-bom-toggle-sub" style="font-size:11px;color:var(--text-muted);">Show in Bill of Materials with cost & vendor fields</span>
+        </div>
+        <div id="modal-bom-switch" style="width:36px;height:20px;border-radius:20px;background:var(--border);position:relative;flex-shrink:0;transition:background .2s;">
+          <div id="modal-bom-knob" style="position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s;"></div>
         </div>
       </div>
+      <!-- BOM Fields (shown when toggle is on) -->
+      <div id="modal-bom-fields" style="display:none;flex-direction:column;gap:16px;">
+        <div style="border-top:1px solid var(--border);padding-top:14px;">
+          <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent2);margin-bottom:12px;">BOM / Procurement</div>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="field-row">
+              <div class="field-group">
+                <div class="field-label">Vendor</div>
+                <input class="field-input" id="modal-vendor" type="text" placeholder="Vendor name...">
+              </div>
+              <div class="field-group">
+                <div class="field-label">Proc. Status</div>
+                <select class="field-select" id="modal-proc-status">
+                  <option value="">— N/A —</option>
+                  <option value="Not ordered">Not ordered</option>
+                  <option value="In progress">In progress</option>
+                  <option value="Ordered">Ordered</option>
+                  <option value="Received">Received</option>
+                  <option value="Partial">Partial</option>
+                  <option value="On hold">On hold</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row" style="grid-template-columns:1fr 1fr 1fr;">
+              <div class="field-group">
+                <div class="field-label">Unit Cost</div>
+                <div style="display:flex;align-items:center;">
+                  <span style="font-size:13px;color:var(--text-muted);background:var(--surface2);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;padding:0 10px;height:38px;display:flex;align-items:center;">$</span>
+                  <input class="field-input" id="modal-unit-cost" type="number" min="0" step="0.01" placeholder="0.00" style="border-radius:0 8px 8px 0;border-left:none;" oninput="updateModalTotal()">
+                </div>
+              </div>
+              <div class="field-group">
+                <div class="field-label">Qty</div>
+                <input class="field-input" id="modal-qty" type="number" min="1" step="1" placeholder="1" oninput="updateModalTotal()">
+              </div>
+              <div class="field-group">
+                <div class="field-label">Total Cost</div>
+                <div class="field-input" id="modal-total-cost" style="background:var(--surface2);color:var(--text-muted);display:flex;align-items:center;">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Notes Log -->
       <div class="field-group">
-        <div class="field-label">Notes</div>
-        <input class="field-input" id="modal-notes" type="text" placeholder="Notes or targets...">
+        <div class="field-label">Notes Log</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <div id="modal-notes-log" style="max-height:180px;overflow-y:auto;"></div>
+          <div style="display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:var(--surface);align-items:flex-end;">
+            <textarea id="modal-notes-input" placeholder="Add a note…" rows="2"
+              style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--sans);font-size:12px;padding:7px 10px;resize:none;outline:none;line-height:1.5;"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addModalNote();}"></textarea>
+            <button class="btn-primary" onclick="addModalNote()" style="padding:7px 14px;font-size:12px;white-space:nowrap;height:56px;">Add note</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2234,12 +2357,17 @@ function openEdit(id){
   document.getElementById('modal-ws').value = t.workStream;
   document.getElementById('modal-owner').value = t.owner||'Unassigned';
   document.getElementById('modal-status').value = t.status||'Not Started';
-  document.getElementById('modal-notes').value = t.notes||'';
+  document.getElementById('modal-vendor').value = t.vendor||'';
+  document.getElementById('modal-proc-status').value = t.procStatus||'';
+  document.getElementById('modal-unit-cost').value = t.unitCost||'';
+  document.getElementById('modal-qty').value = t.qty||'';
+  updateModalTotal();
+  const isBom = BOM_IDS.includes(String(t.id));
+  setBomToggle(isBom);
+  renderNotesLog(getTaskNotesLog(t));
   document.getElementById('modal-delete-btn').style.display = '';
-  // populate datalist
   const wsList = document.getElementById('ws-list');
   wsList.innerHTML = [...new Set(tasks.map(t=>t.workStream))].filter(Boolean).map(ws=>`<option value="${ws}">`).join('');
-  // date checkboxes
   const sched = t.schedule||{};
   document.getElementById('modal-dates').innerHTML = DATE_COLS.map(d=>
     `<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap">
@@ -2257,7 +2385,13 @@ function openAddTask(ws=''){
   document.getElementById('modal-ws').value = ws;
   document.getElementById('modal-owner').value = 'Unassigned';
   document.getElementById('modal-status').value = 'Not Started';
-  document.getElementById('modal-notes').value = '';
+  document.getElementById('modal-vendor').value = '';
+  document.getElementById('modal-proc-status').value = '';
+  document.getElementById('modal-unit-cost').value = '';
+  document.getElementById('modal-qty').value = '';
+  document.getElementById('modal-total-cost').textContent = '—';
+  setBomToggle(false);
+  renderNotesLog([]);
   document.getElementById('modal-delete-btn').style.display = 'none';
   const wsList = document.getElementById('ws-list');
   wsList.innerHTML = [...new Set(tasks.map(t=>t.workStream))].filter(Boolean).map(w=>`<option value="${w}">`).join('');
@@ -2273,6 +2407,7 @@ function openAddTask(ws=''){
 function closeModal(){
   document.getElementById('edit-modal').classList.remove('open');
   editingId = null;
+  _currentNotesLog = [];
 }
 
 function saveModal(){
@@ -2281,8 +2416,11 @@ function saveModal(){
   const ws = document.getElementById('modal-ws').value.trim() || 'General';
   const owner = document.getElementById('modal-owner').value;
   const status = document.getElementById('modal-status').value;
-  const notes = document.getElementById('modal-notes').value.trim();
-  // gather dates
+  const vendor = document.getElementById('modal-vendor').value.trim();
+  const procStatus = document.getElementById('modal-proc-status').value;
+  const unitCost = parseFloat(document.getElementById('modal-unit-cost').value)||0;
+  const qty = parseInt(document.getElementById('modal-qty').value)||0;
+  const notesLog = getModalNotesLog();
   const schedule = {};
   document.querySelectorAll('#modal-dates input[data-date]').forEach(cb=>{
     if(cb.checked) schedule[cb.dataset.date] = '1';
@@ -2290,9 +2428,14 @@ function saveModal(){
 
   if(editingId){
     const t = tasks.find(t=>t.id===String(editingId));
-    if(t){ Object.assign(t,{task:taskName,workStream:ws,owner,status,notes,schedule}); }
+    if(t){ Object.assign(t,{task:taskName,workStream:ws,owner,status,notes:'',notesLog,schedule,vendor,procStatus,unitCost,qty}); }
+    const idx = BOM_IDS.indexOf(String(editingId));
+    if(isBomToggleOn() && idx === -1) BOM_IDS.push(String(editingId));
+    if(!isBomToggleOn() && idx !== -1) BOM_IDS.splice(idx, 1);
   } else {
-    tasks.push({id:genId(),workStream:ws,task:taskName,owner,notes,status,schedule});
+    const newId = genId();
+    tasks.push({id:newId,workStream:ws,task:taskName,owner,notes:'',notesLog,status,schedule,vendor,procStatus,unitCost,qty});
+    if(isBomToggleOn()) BOM_IDS.push(String(newId));
   }
   save(); closeModal(); renderAll(); refreshFilters();
 }
@@ -2313,6 +2456,7 @@ function resetData(){
 // close modal on overlay click
 document.addEventListener('click', e=>{
   if(e.target.id==='edit-modal') closeModal();
+  if(e.target.id==='bom-modal') closeBomModal();
   const ghPanel = document.getElementById('gh-panel');
   const ghBtn = document.getElementById('gh-btn');
   if(ghPanel && ghPanel.classList.contains('open') && !ghPanel.contains(e.target) && e.target !== ghBtn){
@@ -2401,14 +2545,14 @@ const SYSTEM_PROMPT = () => {
 
   // BOM summary
   const bomTotal = bomItems.length;
-  const bomBudget = bomItems.reduce((s,i)=>(s+(Number(i.unitCost)||0)*(Number(i.qty)||0)),0);
-  const bomReceived = bomItems.filter(i=>i.status==='Received').length;
-  const bomOrdered = bomItems.filter(i=>i.status==='Ordered').length;
-  const bomPending = bomItems.filter(i=>i.status==='Pending').length;
-  const bomBackordered = bomItems.filter(i=>i.status==='Backordered').length;
+  const bomBudget = bomItems.reduce((s,i)=>(s+(parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)),0);
+  const bomReceived = bomItems.filter(i=>i.procStatus==='Received').length;
+  const bomOrdered = bomItems.filter(i=>i.procStatus==='Ordered'||i.procStatus==='In progress'||i.procStatus==='Partial').length;
+  const bomPending = bomItems.filter(i=>!i.procStatus||i.procStatus==='Not ordered'||i.procStatus==='Quoted').length;
+  const bomBackordered = bomItems.filter(i=>i.procStatus==='On hold'||i.procStatus==='Cancelled').length;
   const bomSummaryStr = bomItems.length > 0
-    ? bomItems.map(i=>`  - [${i.status}] ${i.name} | Category: ${i.category||'—'} | Vendor: ${i.vendor||'TBD'} | Qty: ${i.qty||0} | Unit: $${Number(i.unitCost||0).toFixed(2)} | Total: $${((Number(i.unitCost)||0)*(Number(i.qty)||0)).toFixed(2)} | Lead: ${i.leadTime||'—'}${i.notes?' | Notes: '+i.notes:''}`).join('\n')
-    : '  (No BOM items entered yet — Linda can import or add items in the BOM tab)';
+    ? bomItems.map(i=>`  - [${i.procStatus||'Not ordered'}] ${i.task} | Cat: ${i.category||'—'} | Owner: ${i.owner||'—'} | Vendor: ${i.vendor||'TBD'} | Qty: ${i.qty||0} | Unit: $${Number(i.unitCost||0).toFixed(2)} | Total: $${((parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)).toFixed(2)}${i.notes?' | '+i.notes:''}`).join('\n')
+    : '  (No BOM items yet)';
 
   return `You are the AI project assistant for the Bubbles Reactor project — an atmospheric water generation system being developed by a small engineering team.
 
@@ -2584,7 +2728,7 @@ async function runSkill(type) {
 
   const taskSummary = tasks.map(t=>`[${t.id}] ${t.workStream} > ${t.task} (${t.owner}, ${t.status}${t.notes?', '+t.notes:''})`).join('\n');
   const bomSummary = bomItems.length > 0
-    ? bomItems.map(i=>`  [${i.status}] ${i.name} | Vendor: ${i.vendor||'TBD'} | Qty: ${i.qty||0} | Total: $${((Number(i.unitCost)||0)*(Number(i.qty)||0)).toFixed(2)} | Lead: ${i.leadTime||'—'}`).join('\n')
+    ? bomItems.map(i=>`  [${i.procStatus||'Not ordered'}] ${i.task} | Vendor: ${i.vendor||'TBD'} | Qty: ${i.qty||0} | Total: $${((parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)).toFixed(2)}`).join('\n')
     : '  (No BOM items yet)';
 
   try {
@@ -3183,22 +3327,147 @@ function quickCycleStatus(id) {
   renderStats();
 }
 
+const BOM_SEED_DATA = [
+  {id:1,task:"Microchannel Heat Exchanger",category:"Heat Exchangers",owner:"Makoto",vendor:"Hylita",manufacturer:"Hylita",partNumber:"--",description:"1500x1700 Finless Microchannel HX with Brazed Perf Sheet Filter with Gap",qty:6,unitCost:1120,leadTime:"20",procStatus:"Ordered",notes:"Ordered Apr 16 2026.",notesLog:[{text:"Ordered Apr 16 2026. Est 20 BD lead time.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:2,task:"Heater",category:"Heating",owner:"Andrew",vendor:"IMS",manufacturer:"IMS",partNumber:"RQT-3650",description:"36kW Hot Water Heater with Circulator up to 95C",qty:1,unitCost:6830,leadTime:"30",procStatus:"Ordered",notes:"Est 6 weeks.",notesLog:[{text:"Ordered Apr 16 2026. Est 6 weeks.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:3,task:"Heater Modbus TCP Module",category:"Heating",owner:"Andrew",vendor:"IMS",manufacturer:"IMS",partNumber:"--",description:"Communications - Modbus TCP via Ethernet for RQT Advanced Controller",qty:1,unitCost:340,leadTime:"30",procStatus:"Ordered",notes:"Est 6 weeks.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:4,task:"Hot Water Storage",category:"Heating",owner:"Andrew",vendor:"Lochinvar (AF Supply)",manufacturer:"Lochinvar",partNumber:"",description:"Hot Water Storage up to 95C",qty:1,unitCost:2742,leadTime:"6",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
+  {id:5,task:"Hot Water Control Valves",category:"Heating",owner:"Andrew",vendor:"Assured Automation",manufacturer:"Assured Automation",partNumber:"",description:"Stainless Steel Electric One Way Valves",qty:1,unitCost:95,leadTime:"6",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
+  {id:6,task:"Adsorb Blower",category:"Dampers & Fans",owner:"Chris",vendor:"EBMpapst",manufacturer:"EBMpapst",partNumber:"",description:"Adsorb fan blower",qty:1,unitCost:721.2,leadTime:"",procStatus:"Not ordered",notes:"Pending spec confirmation from Kasey sim results.",notesLog:[]},
+  {id:7,task:"Sweep Blower",category:"Dampers & Fans",owner:"Makoto",vendor:"EBMpapst",manufacturer:"EBMpapst",partNumber:"",description:"Sweep fan blower",qty:2,unitCost:103.5,leadTime:"",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
+  {id:8,task:"Condenser Cooling Water Pump",category:"Condenser",owner:"Makoto",vendor:"AMT (PumpingSolutions)",manufacturer:"AMT",partNumber:"AMT 368C-95",description:"1.5HP Condenser Cooling Water Circulating Pump",qty:1,unitCost:698,leadTime:"",procStatus:"Not ordered",notes:"",notesLog:[]},
+  {id:9,task:"Condenser Cooling Water Pump VFD",category:"Condenser",owner:"Makoto",vendor:"WEG (PumpingSolutions)",manufacturer:"WEG",partNumber:"CFW500A01P0T4NB20G2",description:"VFD for condenser cooling water pump",qty:1,unitCost:582,leadTime:"",procStatus:"Not ordered",notes:"",notesLog:[]},
+  {id:10,task:"Dry Cooler",category:"Condenser",owner:"Chris",vendor:"Hylita",manufacturer:"Hylita",partNumber:"",description:"Condenser Cooling Water Air Cooler",qty:1,unitCost:800,leadTime:"",procStatus:"Quoted",notes:"",notesLog:[]},
+  {id:11,task:"Condenser",category:"Condenser",owner:"Makoto",vendor:"Hylita",manufacturer:"Hylita",partNumber:"",description:"Condenser for water recovery loop",qty:1,unitCost:300,leadTime:"",procStatus:"Not ordered",notes:"Pending Makoto condenser selection.",notesLog:[]},
+  {id:12,task:"Air Preheat HX",category:"Air Preheat",owner:"Makoto",vendor:"Hylita",manufacturer:"Hylita",partNumber:"",description:"Air preheat heat exchanger",qty:1,unitCost:0,leadTime:"",procStatus:"Not ordered",notes:"Passive vs active decision pending.",notesLog:[]},
+  {id:13,task:"Sweep Damper",category:"Dampers & Fans",owner:"Makoto",vendor:"Greenheck (NSWC)",manufacturer:"Greenheck",partNumber:"VCD-33",description:"VCD-33 18X10 W/ACT - Greenheck Dampers",qty:4,unitCost:539.9,leadTime:"",procStatus:"Ordered",notes:"10 Day build + 3 day shipping.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:14,task:"Adsorb Damper",category:"Dampers & Fans",owner:"Chris",vendor:"Greenheck (NSWC)",manufacturer:"Greenheck",partNumber:"",description:"65x30 Rectangular Adsorption Damper",qty:4,unitCost:771,leadTime:"",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
+  {id:15,task:"Trailer",category:"Trailer & Platform",owner:"Andrew",vendor:"Big Tex",manufacturer:"Big Tex",partNumber:"",description:"14-16ft Trailer for transport and build/test space",qty:1,unitCost:10000,leadTime:"",procStatus:"Not ordered",notes:"",notesLog:[]},
+  {id:16,task:"230V to 460V Transformer",category:"Trailer & Platform",owner:"Andrew",vendor:"Maddox",manufacturer:"Maddox",partNumber:"",description:"230V to 460V step-up transformer",qty:1,unitCost:4695,leadTime:"6",procStatus:"Not ordered",notes:"",notesLog:[]},
+  {id:17,task:"Inlet RH Sensor",category:"Sensors",owner:"Kasey",vendor:"Rotronic (Dwyer/Omega)",manufacturer:"Rotronic",partNumber:"HC2A-S(H)",description:"Humidity and temperature sensor at inlet",qty:1,unitCost:646,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground - Expected May 12th.",notesLog:[{text:"Ordered Apr 16 2026. Expected May 12th.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:18,task:"Outlet RH Sensor",category:"Sensors",owner:"Kasey",vendor:"Rotronic (Dwyer/Omega)",manufacturer:"Rotronic",partNumber:"HC2A-S(H)",description:"Humidity and temperature sensor at outlet",qty:1,unitCost:646,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground - Expected May 12th.",notesLog:[{text:"Ordered Apr 16 2026. Expected May 12th.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:19,task:"Condenser Flow Rate",category:"Sensors",owner:"Kasey",vendor:"McMaster",manufacturer:"Hedland (McMaster)",partNumber:"H617-010-R",description:"Flow meter for condenser loop",qty:1,unitCost:520.8,leadTime:"1",procStatus:"Received",notes:"Delivered May 5th.",notesLog:[{text:"Delivered May 5th.",author:"System",ts:"May 5, 2026"}]},
+  {id:20,task:"Heater Flow Rate",category:"Sensors",owner:"Kasey",vendor:"McMaster",manufacturer:"Hedland (McMaster)",partNumber:"H617-010-R",description:"Flow meter for heater loop",qty:1,unitCost:520.8,leadTime:"1",procStatus:"Received",notes:"Delivered May 5th.",notesLog:[{text:"Delivered May 5th.",author:"System",ts:"May 5, 2026"}]},
+  {id:21,task:"HX Temp",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer/Omega",partNumber:"5TC-GG-T-30-72",description:"Thermocouple for HX temperature distribution",qty:4,unitCost:110.36,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground ~5 days.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:22,task:"Adsorb Air Diff P",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer/Omega",partNumber:"668-6",description:"Differential pressure sensor for adsorb bed",qty:1,unitCost:287.85,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground ~5 days.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:23,task:"Desorb Air Diff P",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer/Omega",partNumber:"668-6",description:"Differential pressure sensor for desorb bed",qty:1,unitCost:287.85,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground ~5 days.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:24,task:"Collected Water Flow Rate / Level Sensor",category:"Sensors",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"UG03-0001-40",description:"Ultrasonic level sensor for water collection tank",qty:1,unitCost:660,leadTime:"6",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
+  {id:25,task:"3Ph Current Transducer",category:"Sensors",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"3ACTR100-42-24-F",description:"3-phase AC current transducer - ads fan, sweep fan, heater, dry cooler, pump",qty:5,unitCost:429,leadTime:"6",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
+  {id:26,task:"1Ph Current Transducer",category:"Sensors",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"ACT050-42L-F",description:"1-phase AC current transducer - dampers, cabinet",qty:2,unitCost:108,leadTime:"6",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
+  {id:27,task:"24VAC Transformer",category:"Electrical",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"PH250PG",description:"24VAC transformer for damper power",qty:1,unitCost:165,leadTime:"1",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
+  {id:28,task:"24VDC Power Supply",category:"Electrical",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"PSR-24-240C",description:"24VDC power supply for sensors",qty:1,unitCost:94,leadTime:"1",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
+  {id:29,task:"Low Current Contactors",category:"Electrical",owner:"Kasey",vendor:"Grainger (Schneider)",manufacturer:"Schneider Electric",partNumber:"2MMT1",description:"IEC Magnetic contactor for condenser and fans",qty:2,unitCost:212.22,leadTime:"1",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
+  {id:30,task:"Heater Contactor",category:"Electrical",owner:"Kasey",vendor:"Grainger (Schneider)",manufacturer:"Schneider Electric",partNumber:"5NHD3",description:"IEC Magnetic contactor for heater",qty:1,unitCost:318.55,leadTime:"1",procStatus:"Received",notes:"Delivered May 5th.",notesLog:[{text:"Delivered May 5th.",author:"System",ts:"May 5, 2026"}]},
+  {id:31,task:"DPDT Relay",category:"Electrical",owner:"Kasey",vendor:"DigiKey (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"2967060",description:"DPDT relay for actuated ball valve",qty:2,unitCost:26.56,leadTime:"6",procStatus:"Ordered",notes:"Expected May 8th.",notesLog:[]},
+  {id:32,task:"TTL to RS485 Converter",category:"Electrical",owner:"Kasey",vendor:"WaveShare",manufacturer:"WaveShare",partNumber:"23778",description:"TTL to RS485 level shifter for Beckhoff",qty:2,unitCost:10.99,leadTime:"",procStatus:"Ordered",notes:"12-15 days delivery.",notesLog:[]},
+  {id:33,task:"5V Power Supply",category:"Electrical",owner:"Kasey",vendor:"DigiKey (Mean Well)",manufacturer:"Mean Well",partNumber:"HDR-15-5",description:"5V DIN rail power supply for UART",qty:1,unitCost:12.2,leadTime:"6",procStatus:"Ordered",notes:"Expected May 8th.",notesLog:[]},
+  {id:34,task:"Electronics Cabinet",category:"Electrical",owner:"Kasey",vendor:"Wolf Automation",manufacturer:"Wolf Automation",partNumber:"SCE-36H3612SSLP",description:"NEMA 4X LP 36x36x12 electronics enclosure",qty:1,unitCost:2055.31,leadTime:"",procStatus:"Received",notes:"Delivered May 7th.",notesLog:[{text:"Delivered May 7th.",author:"System",ts:"May 7, 2026"}]},
+  {id:35,task:"Electronics Subpanel",category:"Electrical",owner:"Kasey",vendor:"Wolf Automation",manufacturer:"Wolf Automation",partNumber:"SCE-36P36",description:"Bent subpanel 33x33x0.88 for electronics cabinet",qty:1,unitCost:149.74,leadTime:"",procStatus:"Received",notes:"Delivered May 7th.",notesLog:[{text:"Delivered May 7th.",author:"System",ts:"May 7, 2026"}]},
+  {id:36,task:"80/20 Frame Members",category:"Structure & Hardware",owner:"Chris",vendor:"80/20",manufacturer:"80/20",partNumber:"",description:"80/20 aluminum extrusion frame members",qty:1,unitCost:6200,leadTime:"",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
+  {id:37,task:"5in Dia SS Pipe 36ft",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"36ft of low pressure 5in dia stainless steel pipe",qty:1,unitCost:1260,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:38,task:"3in Dia SS Pipe 30ft",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"30ft of low pressure 3in dia stainless steel pipe",qty:1,unitCost:600,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:39,task:"1.25in Dia SS Pipe 40ft",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"40ft of low pressure 1.25in dia stainless steel pipe",qty:1,unitCost:320,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:40,task:"SS Pipe Elbows 2.5in",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Low pressure 2.5in dia stainless steel pipe elbows",qty:32,unitCost:25,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:41,task:"SS Pipe Elbows 1.25in",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Low pressure 1.25in dia stainless steel pipe elbows",qty:16,unitCost:12,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:42,task:"PVC Pipe 1.5in 16.5ft",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"16.5ft of 1.5in dia PVC pipe",qty:1,unitCost:25,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:43,task:"PVC Pipe 1in 8.5in",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"8.5in of 1in dia PVC pipe",qty:1,unitCost:2,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:44,task:"PVC Elbows 1in",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"1in dia PVC elbows",qty:8,unitCost:1.5,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:45,task:"Sheet Metal Enclosure - Aluminum",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Reactor sheet metal enclosure - aluminum",qty:16,unitCost:383.022,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:46,task:"Outlet Plenum - Aluminum",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Outlet plenum - aluminum",qty:4,unitCost:164.9592,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:47,task:"Recirculation Duct - Aluminum",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Recirculation duct - aluminum",qty:16,unitCost:23.8788,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:48,task:"Recirculation Duct Assembly - Aluminum",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Recirculation duct assembly - aluminum",qty:4,unitCost:336.4632,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:49,task:"Insulation 1in Rigid Foam",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Insulation - 1in thick rigid foam",qty:1,unitCost:317.04,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
+  {id:50,task:"Aluminum Blind Rivets 3/16in 0.063-0.125in",category:"Structure & Hardware",owner:"Andrew",vendor:"McMaster",manufacturer:"McMaster",partNumber:"97447A045",description:"Aluminum Blind Rivets with Aluminum Mandrel, Domed Head, 3/16in Dia, for 0.063-0.125in Material Thickness, packs of 100",qty:1,unitCost:9.36,leadTime:"",procStatus:"Received",notes:"Same day delivery.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:51,task:"Aluminum Blind Rivets 3/16in 0.126-0.25in",category:"Structure & Hardware",owner:"Andrew",vendor:"McMaster",manufacturer:"McMaster",partNumber:"97447A050",description:"Aluminum Blind Rivets with Aluminum Mandrel, Domed Head, 3/16in Dia, for 0.126-0.25in Material Thickness, packs of 100",qty:1,unitCost:10.23,leadTime:"",procStatus:"Received",notes:"Same day delivery.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:52,task:"Long-Reach Ball-End Bit Socket",category:"Tools",owner:"Andrew",vendor:"McMaster",manufacturer:"McMaster",partNumber:"93167A170",description:"Long-Reach Ball-End Hex Bit Socket, 1/2in Square Drive, 5mm Drive, 5-1/8in Overall Length",qty:2,unitCost:15.55,leadTime:"",procStatus:"Received",notes:"Same day delivery.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:53,task:"Coolant Hose",category:"Structure & Hardware",owner:"Chris",vendor:"McMaster",manufacturer:"McMaster",partNumber:"5591K25",description:"High-Temperature Coolant Hose with Steel Wire Reinforcement, 2in ID, 2-3/8in OD",qty:1,unitCost:27.61,leadTime:"",procStatus:"Received",notes:"Delivered.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 8, 2026"}]},
+  {id:54,task:"Torque-Measuring Wrench",category:"Tools",owner:"Andrew",vendor:"McMaster",manufacturer:"McMaster",partNumber:"8976A76",description:"Torque-Measuring Wrench with NIST Certificate, Standard Head, 1/2in Square Drive, 17-1/2in Overall Length",qty:1,unitCost:319.92,leadTime:"",procStatus:"Received",notes:"Delivered.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 16, 2026"}]},
+  {id:55,task:"Cast Acrylic Sheet 1/16in",category:"Structure & Hardware",owner:"Chris",vendor:"McMaster",manufacturer:"McMaster",partNumber:"8560K174",description:"Clear Scratch and UV-Resistant Cast Acrylic Sheet, 24x24x1/16in",qty:1,unitCost:19.92,leadTime:"",procStatus:"Received",notes:"Delivered.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 28, 2026"}]},
+  {id:56,task:"Cast Acrylic Sheet 1/8in",category:"Structure & Hardware",owner:"Chris",vendor:"McMaster",manufacturer:"McMaster",partNumber:"8560K259",description:"Clear Scratch and UV-Resistant Cast Acrylic Sheet, 24x24x1/8in",qty:2,unitCost:32,leadTime:"",procStatus:"Received",notes:"Delivered.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 28, 2026"}]},
+  {id:57,task:"DIN Rail",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1207640",description:"DIN rail for electronics mounting",qty:20,unitCost:9.59,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
+  {id:58,task:"Thermocouple Jack",category:"Electrical",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer Omega",partNumber:"MJP1-12-T",description:"Thermocouple panel passthrough jack",qty:2,unitCost:91.07,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
+  {id:59,task:"Terminal Connectors",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"3044076",description:"DIN rail terminal connectors",qty:200,unitCost:1.31,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
+  {id:60,task:"Power Distribution Bus - Red",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046951",description:"Red power distribution bus bar",qty:4,unitCost:8.12,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
+  {id:61,task:"Power Distribution Bus - Blue",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046950",description:"Blue power distribution bus bar",qty:4,unitCost:8.12,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
+  {id:62,task:"Power Distribution Bus - Black",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046955",description:"Black power distribution bus bar",qty:4,unitCost:8.12,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
+  {id:63,task:"Power Distribution Bus - Grey",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046949",description:"Grey power distribution bus bar",qty:4,unitCost:8.12,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
+  {id:64,task:"Power Distribution Bus - White",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046956",description:"White power distribution bus bar",qty:4,unitCost:6.88,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
+  {id:65,task:"HX Water Temp",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer Omega",partNumber:"TC-T-NPT-U-72",description:"In-house sensor for HX water temperature",qty:2,unitCost:77.41,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
+  {id:66,task:"HX Water Pressure",category:"Sensors",owner:"Kasey",vendor:"Newark",manufacturer:"Newark",partNumber:"PX309-100GI",description:"In-house sensor for HX water pressure",qty:1,unitCost:469.88,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
+  {id:67,task:"Condenser Water Temp",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"DwyerOmega",partNumber:"TC-T-NPT-U-72",description:"In-house sensor for condenser water temperature",qty:2,unitCost:77.41,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
+  {id:68,task:"Condenser Water Pressure",category:"Sensors",owner:"Kasey",vendor:"Newark",manufacturer:"Newark",partNumber:"PX309-100GI",description:"In-house sensor for condenser water pressure",qty:1,unitCost:469.88,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
+  {id:69,task:"Adsorb Air Flow Rate",category:"Sensors",owner:"Kasey",vendor:"Newark",manufacturer:"Newark",partNumber:"FMA904A-MA",description:"In-house sensor for adsorb air flow rate",qty:1,unitCost:1086.81,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
+  {id:70,task:"Desorb Air Flow Rate",category:"Sensors",owner:"Kasey",vendor:"Newark",manufacturer:"Newark",partNumber:"FMA904A-MA",description:"In-house sensor for desorb air flow rate",qty:1,unitCost:1086.81,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
+  {id:71,task:"IPC Base Unit",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"C6025-0010 / 000536828",description:"IPC - 8GB DDR4 RAM, 40GB M.2 SSD, 3x Ethernet on-board",qty:1,unitCost:3139,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[{text:"FedEx 381139871672 - Expected May 11th.",author:"System",ts:"Apr 28, 2026"}]},
+  {id:72,task:"Processor Upgrade",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"C9900-C588",description:"11th gen Intel Core i3-1115G4E, 2.2GHz, 2 cores (TC3: 50)",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"Included in IPC order.",notesLog:[]},
+  {id:73,task:"80GB M.2 SSD",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"C9900-H597",description:"80GB M.2 SSD, 3D flash, extended temperature range",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"Included in IPC order.",notesLog:[]},
+  {id:74,task:"Windows 11 IoT License",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"C9900-S540",description:"Windows 11 IoT Enterprise 2024 LTSC, 64 bit",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"Included in IPC order.",notesLog:[]},
+  {id:75,task:"EtherCAT Coupler",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EK1100",description:"EtherCAT coupler",qty:1,unitCost:178,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
+  {id:76,task:"EtherCAT Extension",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EK1110",description:"EtherCAT extension terminal",qty:1,unitCost:96,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
+  {id:77,task:"EtherCAT Digital Input 16ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"ED1809",description:"EtherCAT Terminal, 16-channel digital input, 24V DC, 3ms, push-in",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
+  {id:78,task:"EtherCAT Relay Output 2ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL2602",description:"EtherCAT Terminal, 2-channel relay output, 230V AC, 30V DC, 5A",qty:2,unitCost:66,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
+  {id:79,task:"EtherCAT Digital Output 8ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL2838",description:"EtherCAT Terminal, 8-channel digital output, 24V DC, 2A, with diagnostics",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
+  {id:80,task:"EtherCAT Analog Input 8ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL3078",description:"EtherCAT Terminal, 8-channel analog input, multi-function, +/-10V, +/-20mA, 16bit",qty:2,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
+  {id:81,task:"EtherCAT TC Input 8ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL3318",description:"EtherCAT Terminal, 8-channel analog input, temperature, thermocouple, 16bit",qty:3,unitCost:432,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
+  {id:82,task:"EtherCAT RS485 Serial 2ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL6022",description:"EtherCAT Terminal, 2-channel communication interface, serial, RS422/RS485, D-sub",qty:3,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
+  {id:83,task:"TwinCAT 3.1 License",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL6070-0033 / 000015752",description:"EtherCAT Terminal, license key for TwinCAT 3.1",qty:1,unitCost:160,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
+  {id:84,task:"TwinCAT Subpart 1",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL6070-0033",description:"Subpart for TwinCAT license item 83",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
+  {id:85,task:"TwinCAT Subpart 2",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"TC1000-0190",description:"Subpart for TwinCAT license item 83",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
+  {id:86,task:"EtherCAT E-Bus Power Supply",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL9410",description:"EtherCAT Terminal, power supply for E-bus, 24V DC, 2A, with diagnostics",qty:1,unitCost:87,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
+  {id:87,task:"M8-4A Male Field Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1482520 SACC-M 8MS-4PL-M",description:"M8 4-pin male field connector, 5VDC",qty:5,unitCost:27.15,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
+  {id:88,task:"M8-4A Female Litz Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1500363 SACC-E-M 8FS-4CON-M8/0,5",description:"M8 4-pin female litz connector, 5VDC",qty:5,unitCost:22.47,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
+  {id:89,task:"M12-4A Male Field Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1424666 SACC-M12MS-4PL SH",description:"M12 4-pin male field connector, 24VDC",qty:19,unitCost:23.19,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
+  {id:90,task:"M12-4A Female Litz Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1523434 SACC-E-FS-4CON-M16/0,5 SCO",description:"M12 4-pin female litz connector, 24VDC",qty:19,unitCost:19.83,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
+  {id:91,task:"M12-5A Male Field Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1424658 SACC-M12MS-5PL SH",description:"M12 5-pin male field connector, 24VAC",qty:11,unitCost:25.7,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
+  {id:92,task:"M12-5A Female Litz Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1411571 SACC-E-M12FS-5P-M16XL/0,5",description:"M12 5-pin female litz connector, 24VAC",qty:11,unitCost:14.97,leadTime:"7",procStatus:"Partial",notes:"Partial Backorder. Expected May 15th.",notesLog:[]},
+  {id:93,task:"M12-5B Male Field Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1424674 SACC-M12MSB-5PL SH IB",description:"M12 5-pin B-coded male field connector, DATA",qty:11,unitCost:27.8,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
+  {id:94,task:"M12-5B Female Litz Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1411572 SACC-E-M12FSB-5P-M16XL/0,5",description:"M12 5-pin B-coded female litz connector, DATA",qty:11,unitCost:14.97,leadTime:"",procStatus:"On hold",notes:"Backorder 5 weeks.",notesLog:[]}
+];
+
+// Category → Gantt task ID mapping
+const BOM_CATEGORY_TASK_MAP = {
+  'Heat Exchangers':    '141',
+  'Heating':            '142',
+  'Dampers & Fans':     '147',
+  'Trailer & Platform': '145',
+  'Sensors':            '146',
+  'PLC & Controls':     '146',
+  'Electrical':         '146',
+  'Connectors':         '146',
+  'Condenser':          '148',
+  'Air Preheat':        '149',
+  'Structure & Hardware': null,
+  'Tools':              null,
+  'Plumbing':           null,
+  'Sheet Metal':        null,
+  'Unorganized':        null,
+};
+
 // ===== BOM =====
+// BOM stores real procurement line items independently of tasks
+// Items have: id, task(name), category, owner, vendor, qty, unitCost, procStatus, notes, notesLog
 let bomItems = [];
-let bomSortCol = 'category';
-let bomSortDir = 'asc';
-let editingBomId = null;
+let BOM_IDS = []; // kept for legacy task-toggle compatibility
+let bomCollapsed = new Set(); // tracks which categories are collapsed
 
 function loadBom(){
   try {
-    const saved = localStorage.getItem('bubbles_bom_v2');
-    if(saved){ bomItems = JSON.parse(saved); }
-    else { bomItems = []; }
-  } catch(e){ bomItems = []; }
+    const saved = localStorage.getItem('bubbles_bom_v6');
+    if(saved){
+      const parsed = JSON.parse(saved);
+      bomItems = parsed.items || [];
+      BOM_IDS = parsed.bomIds || [];
+    } else {
+      // Fresh load — seed with real BOM data from spreadsheet
+      bomItems = JSON.parse(JSON.stringify(BOM_SEED_DATA));
+      BOM_IDS = [];
+      saveBom();
+    }
+  } catch(e){ bomItems = JSON.parse(JSON.stringify(BOM_SEED_DATA)); BOM_IDS = []; }
 }
 
 function saveBom(){
-  localStorage.setItem('bubbles_bom_v2', JSON.stringify(bomItems));
+  localStorage.setItem('bubbles_bom_v6', JSON.stringify({items: bomItems, bomIds: BOM_IDS}));
   scheduleBomPush();
   scheduleGhBomPush();
 }
@@ -3210,7 +3479,6 @@ function scheduleBomPush(){
   bomPushDebounce = setTimeout(async ()=>{
     try {
       const base = fbConfig.url.replace(/\/$/,'');
-      const path = (fbConfig.path||'bubbles/gantt').replace(/^\//, '').replace(/\//g, '/').replace('gantt','bom');
       await fetch(`${base}/bubbles/bom.json`,{
         method:'PUT', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ savedAt: new Date().toISOString(), savedBy: fbConfig.user, items: bomItems })
@@ -3227,188 +3495,220 @@ async function pullBomFromFirebase(){
     const data = await resp.json();
     if(data && data.items && data.items.length > 0){
       bomItems = data.items;
-      localStorage.setItem('bubbles_bom_v1', JSON.stringify(bomItems));
-      renderBom();
+      saveBom(); renderBom();
     }
   } catch(e){ console.warn('BOM pull failed', e); }
 }
 
-function bomGenId(){
-  return 'b' + Date.now();
+function procStatusClass(s){
+  const map = {
+    'Not ordered':'background:rgba(100,116,139,.12);color:var(--text-muted);border:1px solid rgba(100,116,139,.25)',
+    'In progress':'background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.3)',
+    'Ordered':'background:rgba(59,130,246,.12);color:#93c5fd;border:1px solid rgba(59,130,246,.3)',
+    'Received':'background:rgba(16,185,129,.12);color:#6ee7b7;border:1px solid rgba(16,185,129,.3)',
+    'Partial':'background:rgba(139,92,246,.12);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)',
+    'On hold':'background:rgba(6,182,212,.12);color:#67e8f9;border:1px solid rgba(6,182,212,.3)',
+    'Cancelled':'background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.3)',
+    'Quoted':'background:rgba(168,85,247,.12);color:#d8b4fe;border:1px solid rgba(168,85,247,.3)'
+  };
+  return map[s]||map['Not ordered'];
 }
 
-function bomProgressClass(status){
-  const map = { Ordered:'bp-ordered', Received:'bp-received', Pending:'bp-pending', Quoted:'bp-quoted', Backordered:'bp-backordered' };
-  return map[status] || 'bp-pending';
+function bomGenId(){ return 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+function fmtCost(n){ return n ? '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—'; }
+
+function renderBom(){
+  const body = document.getElementById('bom-body');
+  if(!body) return;
+
+  // Update category filter dropdown
+  const catFilter = document.getElementById('bom-cat-filter');
+  const activeCat = catFilter ? catFilter.value : '';
+  if(catFilter){
+    const cats = [...new Set(bomItems.map(i=>i.category).filter(Boolean))].sort();
+    const cur = catFilter.value;
+    catFilter.innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
+  }
+
+  let grandTotal = 0;
+  let countReceived = 0, countOrdered = 0, countNotOrdered = 0, countOther = 0;
+  for(const item of bomItems){
+    const ps = item.procStatus||'Not ordered';
+    if(ps==='Received') countReceived++;
+    else if(ps==='Ordered'||ps==='In progress'||ps==='Partial') countOrdered++;
+    else if(ps==='Not ordered'||ps==='Quoted') countNotOrdered++;
+    else countOther++;
+    grandTotal += (parseFloat(item.unitCost)||0)*(parseInt(item.qty)||0);
+  }
+
+  const displayItems = activeCat ? bomItems.filter(i=>i.category===activeCat) : bomItems;
+
+  if(displayItems.length === 0){
+    body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:50px 20px;">
+      <div style="font-size:28px;margin-bottom:10px;">📦</div>
+      <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:6px;">No items in this category</div>
+      <button class="btn-primary" onclick="openAddBomItem()" style="margin-top:8px;">+ Add component</button>
+    </td></tr>`;
+    document.getElementById('bom-grand-total').textContent = grandTotal ? fmtCost(grandTotal) : '$—';
+    renderBomStats(bomItems.length, grandTotal, countReceived, countOrdered, countNotOrdered, countOther);
+    return;
+  }
+
+  const categories = [];
+  const groups = {};
+  for(const item of displayItems){
+    const cat = item.category || 'Unorganized';
+    if(!groups[cat]){ groups[cat]=[]; categories.push(cat); }
+    groups[cat].push(item);
+  }
+
+  let html = '';
+  for(const cat of categories){
+    const catItems = groups[cat];
+    const catTotal = catItems.reduce((s,i)=>(s+(parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)),0);
+    const isCollapsed = bomCollapsed.has(cat);
+    const chevron = isCollapsed ? '▶' : '▼';
+    html += `<tr class="bom-cat-header" onclick="toggleBomCat('${cat.replace(/'/g,"\\'")}')">
+      <td colspan="9" style="padding:8px 12px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent2);font-weight:700;background:rgba(6,182,212,.06);">
+        <span class="bom-cat-chevron ${isCollapsed?'collapsed':''}">${chevron}</span>${cat}
+        <span style="color:var(--text-muted);font-weight:400;margin-left:8px;">${catItems.length} items · ${fmtCost(catTotal)}</span>
+      </td><td style="background:rgba(6,182,212,.06);"></td></tr>`;
+    if(!isCollapsed){
+      for(const item of catItems){
+      const cost = parseFloat(item.unitCost)||0;
+      const qty = parseInt(item.qty)||0;
+      const total = cost && qty ? cost*qty : 0;
+      const ps = item.procStatus || 'Not ordered';
+      const latestNote = (item.notesLog&&item.notesLog.length) ? item.notesLog[item.notesLog.length-1].text : (item.notes||'');
+      const vendorStr = item.vendor ? `<span style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${item.vendor}</span>` : `<span style="color:var(--text-muted);font-size:11px;">—</span>`;
+      const leadStr = item.leadTime ? `<span style="font-family:var(--mono);font-size:11px;">${item.leadTime}</span>` : `<span style="color:var(--text-muted);font-size:11px;">—</span>`;
+      const linkedId = item.linkedTaskId || BOM_CATEGORY_TASK_MAP[item.category] || null;
+      const linkedTask = linkedId ? tasks.find(t=>t.id===String(linkedId)) : null;
+      const linkedBadge = linkedTask ? `<span style="font-size:9px;font-family:var(--mono);color:var(--accent);background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:3px;padding:1px 5px;margin-left:6px;cursor:pointer;" onclick="event.stopPropagation();openEdit('${linkedId}')" title="Open task #${linkedId}">#${linkedId}</span>` : '';
+      const partSub = item.partNumber ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;font-family:var(--mono);">${item.partNumber}</div>` : '';
+      html += `<tr style="cursor:pointer" onclick="openEditBomItem(${item.id})">
+        <td class="task-id" style="color:var(--text-muted);font-size:11px;font-family:var(--mono);">${item.id}</td>
+        <td class="task-name">${item.task}${linkedBadge}${partSub}${latestNote?`<div style="font-size:10px;color:var(--text-muted);margin-top:2px;line-height:1.4">${latestNote}</div>`:''}</td>
+        <td><span class="owner-badge ${ownerClass(item.owner||'Unassigned')}">${item.owner||'—'}</span></td>
+        <td>${vendorStr}</td>
+        <td><span class="status-badge" style="${procStatusClass(ps)};cursor:pointer" onclick="event.stopPropagation();cycleBomStatus(${item.id})">${ps}</span></td>
+        <td style="text-align:center;">${leadStr}</td>
+        <td style="text-align:right;font-family:var(--mono);font-size:11px">${cost?fmtCost(cost):'<span style="color:var(--text-muted)">—</span>'}</td>
+        <td style="text-align:center;font-family:var(--mono);font-size:11px">${qty||'—'}</td>
+        <td style="text-align:right;font-family:var(--mono);font-size:11px">${total?fmtCost(total):'<span style="color:var(--text-muted)">—</span>'}</td>
+        <td><button class="delete-btn" onclick="event.stopPropagation();deleteBomItem(${item.id})" title="Delete">x</button></td>
+      </tr>`;
+      } // end if(!isCollapsed)
+    }
+  }
+  body.innerHTML = html;
+  document.getElementById('bom-grand-total').textContent = grandTotal ? fmtCost(grandTotal) : '$—';
+  renderBomStats(bomItems.length, grandTotal, countReceived, countOrdered, countNotOrdered, countOther);
 }
 
-function fmtCurrency(n){
-  if(!n && n !== 0) return '—';
-  return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+function toggleBomCat(cat){
+  if(bomCollapsed.has(cat)) bomCollapsed.delete(cat);
+  else bomCollapsed.add(cat);
+  renderBom();
+}
+
+function renderBomStats(total, budget, received, ordered, notOrdered, other){
+  const el = document.getElementById('bom-stats');
+  if(!el) return;
+  el.innerHTML = `
+    <div class="stat-card" style="--card-accent:var(--green)"><div class="stat-label">Total BOM Cost</div><div class="stat-value" style="font-size:20px">${budget?fmtCost(budget):'$—'}</div><div class="stat-sub">${total} line items</div></div>
+    <div class="stat-card" style="--card-accent:var(--accent2)"><div class="stat-label">Received</div><div class="stat-value">${received}</div><div class="stat-sub">of ${total} items (${total?Math.round(received/total*100):0}%)</div></div>
+    <div class="stat-card" style="--card-accent:var(--amber)"><div class="stat-label">Ordered / In Progress</div><div class="stat-value">${ordered}</div><div class="stat-sub">procurement active</div></div>
+    <div class="stat-card" style="--card-accent:var(--red)"><div class="stat-label">Not Ordered / Quoted</div><div class="stat-value">${notOrdered}</div><div class="stat-sub">pending procurement</div></div>`;
 }
 
 function cycleBomStatus(id){
   const item = bomItems.find(i=>i.id===id);
   if(!item) return;
-  const statuses = ['Pending','Quoted','Ordered','Received','Backordered'];
-  item.status = statuses[(statuses.indexOf(item.status)+1) % statuses.length];
+  const statuses = ['Not ordered','Quoted','In progress','Ordered','Partial','Received','On hold','Cancelled'];
+  const idx = statuses.indexOf(item.procStatus||'Not ordered');
+  item.procStatus = statuses[(idx+1)%statuses.length];
   saveBom(); renderBom();
-}
-
-function renderBom(){
-  const search = (document.getElementById('bom-search')||{value:''}).value.toLowerCase();
-  const statusF = (document.getElementById('bom-filter-status')||{value:''}).value;
-  const catF = (document.getElementById('bom-filter-category')||{value:''}).value;
-
-  let filtered = bomItems.filter(i=>{
-    if(statusF && i.status !== statusF) return false;
-    if(catF && i.category !== catF) return false;
-    if(search && !i.name.toLowerCase().includes(search) && !(i.vendor||'').toLowerCase().includes(search) && !(i.category||'').toLowerCase().includes(search)) return false;
-    return true;
-  });
-
-  // Sort
-  filtered.sort((a,b)=>{
-    let av = a[bomSortCol]||'', bv = b[bomSortCol]||'';
-    if(bomSortCol==='unitCost'||bomSortCol==='qty'||bomSortCol==='totalCost'){
-      av = Number(av)||0; bv = Number(bv)||0;
-      return bomSortDir==='asc' ? av-bv : bv-av;
-    }
-    return bomSortDir==='asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
-  });
-
-  // Empty state
-  if(bomItems.length === 0){
-    document.getElementById('bom-table').innerHTML = `
-      <tbody><tr><td colspan="10" style="text-align:center;padding:60px 20px;">
-        <div style="font-size:32px;margin-bottom:12px;">📦</div>
-        <div style="font-size:15px;color:var(--text);font-weight:600;margin-bottom:8px;">No BOM items yet</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Import your existing spreadsheet or add items manually</div>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-          <button class="btn-primary" onclick="triggerBomImport()">↑ Import CSV / Excel</button>
-          <button class="btn-secondary" onclick="openAddBomItem()">＋ Add Item Manually</button>
-        </div>
-      </td></tr></tbody>`;
-    document.getElementById('bom-stat-total').textContent = '0';
-    document.getElementById('bom-stat-budget').textContent = '—';
-    document.getElementById('bom-stat-received').textContent = '0';
-    document.getElementById('bom-stat-received-pct').textContent = 'of 0 items';
-    document.getElementById('bom-stat-ordered').textContent = '0';
-    document.getElementById('bom-stat-pending').textContent = '0';
-    document.getElementById('bom-count').textContent = '';
-    return;
-  }
-  const cats = [...new Set(bomItems.map(i=>i.category).filter(Boolean))].sort();
-  const catSel = document.getElementById('bom-filter-category');
-  const curCat = catSel.value;
-  catSel.innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option value="${c}" ${c===curCat?'selected':''}>${c}</option>`).join('');
-
-  document.getElementById('bom-count').textContent = `Showing ${filtered.length} of ${bomItems.length} items`;
-
-  // Stats
-  const totalCost = bomItems.reduce((s,i)=> s + (Number(i.unitCost)||0)*(Number(i.qty)||0), 0);
-  const received = bomItems.filter(i=>i.status==='Received').length;
-  const ordered = bomItems.filter(i=>i.status==='Ordered').length;
-  const pending = bomItems.filter(i=>i.status==='Pending').length;
-  document.getElementById('bom-stat-total').textContent = bomItems.length;
-  document.getElementById('bom-stat-budget').textContent = totalCost ? fmtCurrency(totalCost) : '—';
-  document.getElementById('bom-stat-received').textContent = received;
-  document.getElementById('bom-stat-received-pct').textContent = `of ${bomItems.length} items (${Math.round(received/bomItems.length*100)||0}%)`;
-  document.getElementById('bom-stat-ordered').textContent = ordered;
-  document.getElementById('bom-stat-pending').textContent = pending;
-
-  // Build table
-  const cols = [
-    {key:'category', label:'Category'},
-    {key:'name', label:'Item'},
-    {key:'vendor', label:'Vendor'},
-    {key:'qty', label:'Qty'},
-    {key:'unitCost', label:'Unit Cost'},
-    {key:'totalCost', label:'Total Cost'},
-    {key:'status', label:'Status'},
-    {key:'leadTime', label:'Lead Time'},
-    {key:'notes', label:'Notes'},
-    {key:'_actions', label:''},
-  ];
-
-  let html = `<thead><tr>${cols.map(c=> c.key==='_actions' ? '<th></th>' :
-    `<th onclick="sortBom('${c.key}')" class="${bomSortCol===c.key?'sorted-'+bomSortDir:''}">${c.label}</th>`
-  ).join('')}</tr></thead><tbody>`;
-
-  for(const item of filtered){
-    const total = (Number(item.unitCost)||0) * (Number(item.qty)||0);
-    html += `<tr data-bom-id="${item.id}">
-      <td><span style="font-size:11px;color:var(--text-dim)">${item.category||'—'}</span></td>
-      <td style="font-weight:500;max-width:220px;">${item.name}</td>
-      <td style="color:var(--text-dim)">${item.vendor||'—'}</td>
-      <td class="bom-qty">${item.qty||0}</td>
-      <td class="bom-cost">${item.unitCost ? fmtCurrency(item.unitCost) : '—'}</td>
-      <td class="bom-cost" style="color:${total?'var(--text)':'var(--text-muted)'}">${total ? fmtCurrency(total) : '—'}</td>
-      <td><span class="bom-progress ${bomProgressClass(item.status)}" onclick="cycleBomStatus('${item.id}')" title="Click to cycle status">${item.status||'Pending'}</span></td>
-      <td style="color:var(--text-muted);font-size:11px;">${item.leadTime||'—'}</td>
-      <td style="color:var(--text-muted);font-size:11px;max-width:200px;">${item.notes||''}</td>
-      <td class="bom-actions">
-        <button class="toolbar-btn" onclick="openEditBomItem('${item.id}')" style="padding:3px 8px;font-size:11px;">✎</button>
-        <button class="bom-del-btn" onclick="confirmDeleteBomItem('${item.id}')" title="Delete">✕</button>
-      </td>
-    </tr>`;
-  }
-
-  // Totals row
-  const filteredTotal = filtered.reduce((s,i)=> s + (Number(i.unitCost)||0)*(Number(i.qty)||0), 0);
-  html += `<tr class="bom-total-row">
-    <td colspan="5" style="text-align:right;color:var(--text-muted);">TOTAL (filtered ${filtered.length} items)</td>
-    <td class="bom-cost" style="color:var(--accent2)">${fmtCurrency(filteredTotal)}</td>
-    <td colspan="4"></td>
-  </tr>`;
-
-  html += '</tbody>';
-  document.getElementById('bom-table').innerHTML = html;
-}
-
-function sortBom(col){
-  if(bomSortCol === col){ bomSortDir = bomSortDir==='asc'?'desc':'asc'; }
-  else { bomSortCol = col; bomSortDir = 'asc'; }
-  renderBom();
 }
 
 function openAddBomItem(){
   editingBomId = null;
   document.getElementById('bom-modal-title').textContent = 'Add BOM Item';
   document.getElementById('bom-modal-name').value = '';
+  document.getElementById('bom-modal-description').value = '';
   document.getElementById('bom-modal-category').value = '';
+  document.getElementById('bom-modal-category-new').style.display = 'none';
+  document.getElementById('bom-modal-category-new').value = '';
+  document.getElementById('bom-modal-owner').value = 'Unassigned';
+  document.getElementById('bom-modal-manufacturer').value = '';
   document.getElementById('bom-modal-vendor').value = '';
+  document.getElementById('bom-modal-partnum').value = '';
   document.getElementById('bom-modal-qty').value = '1';
   document.getElementById('bom-modal-unitcost').value = '';
-  document.getElementById('bom-modal-status').value = 'Pending';
+  document.getElementById('bom-modal-status').value = 'Not ordered';
   document.getElementById('bom-modal-leadtime').value = '';
   document.getElementById('bom-modal-notes').value = '';
+  document.getElementById('bom-modal-linked-task').value = '';
   document.getElementById('bom-modal-delete').style.display = 'none';
-  // Populate category datalist
-  const cats = [...new Set(bomItems.map(i=>i.category).filter(Boolean))].sort();
-  document.getElementById('bom-category-list').innerHTML = cats.map(c=>`<option value="${c}">`).join('');
   document.getElementById('bom-modal').classList.add('open');
-  setTimeout(()=>document.getElementById('bom-modal-name').focus(), 100);
+  setTimeout(()=>document.getElementById('bom-modal-name').focus(),100);
 }
 
 function openEditBomItem(id){
-  const item = bomItems.find(i=>i.id===id);
+  const item = bomItems.find(i=>i.id===id || i.id===Number(id));
   if(!item) return;
-  editingBomId = id;
-  document.getElementById('bom-modal-title').textContent = 'Edit BOM Item';
-  document.getElementById('bom-modal-name').value = item.name||'';
-  document.getElementById('bom-modal-category').value = item.category||'';
+  editingBomId = item.id;
+  document.getElementById('bom-modal-title').textContent = `Edit BOM Item #${item.id}`;
+  document.getElementById('bom-modal-name').value = item.task||'';
+  document.getElementById('bom-modal-description').value = item.description||'';
+  // Set category — if it's a custom one not in the list, show it in the new field
+  const catSel = document.getElementById('bom-modal-category');
+  const catNew = document.getElementById('bom-modal-category-new');
+  const knownCats = [...catSel.options].map(o=>o.value).filter(v=>v&&v!=='__new__');
+  if(item.category && knownCats.includes(item.category)){
+    catSel.value = item.category;
+    catNew.style.display = 'none'; catNew.value = '';
+  } else if(item.category){
+    catSel.value = '__new__';
+    catNew.style.display = 'block'; catNew.value = item.category;
+  } else {
+    catSel.value = ''; catNew.style.display = 'none'; catNew.value = '';
+  }
+  document.getElementById('bom-modal-owner').value = item.owner||'Unassigned';
+  document.getElementById('bom-modal-manufacturer').value = item.manufacturer||'';
   document.getElementById('bom-modal-vendor').value = item.vendor||'';
+  document.getElementById('bom-modal-partnum').value = item.partNumber||'';
   document.getElementById('bom-modal-qty').value = item.qty||1;
   document.getElementById('bom-modal-unitcost').value = item.unitCost||'';
-  document.getElementById('bom-modal-status').value = item.status||'Pending';
+  updateBomModalTotal();
+  document.getElementById('bom-modal-status').value = item.procStatus||'Not ordered';
   document.getElementById('bom-modal-leadtime').value = item.leadTime||'';
   document.getElementById('bom-modal-notes').value = item.notes||'';
+  document.getElementById('bom-modal-linked-task').value = item.linkedTaskId || BOM_CATEGORY_TASK_MAP[item.category] || '';
   document.getElementById('bom-modal-delete').style.display = 'inline-flex';
-  const cats = [...new Set(bomItems.map(i=>i.category).filter(Boolean))].sort();
-  document.getElementById('bom-category-list').innerHTML = cats.map(c=>`<option value="${c}">`).join('');
   document.getElementById('bom-modal').classList.add('open');
-  setTimeout(()=>document.getElementById('bom-modal-name').focus(), 100);
+  setTimeout(()=>document.getElementById('bom-modal-name').focus(),100);
+}
+
+function handleBomCatChange(sel){
+  const newInput = document.getElementById('bom-modal-category-new');
+  if(sel.value === '__new__'){
+    newInput.style.display = 'block';
+    setTimeout(()=>newInput.focus(), 50);
+  } else {
+    newInput.style.display = 'none';
+    newInput.value = '';
+  }
+}
+
+function getBomModalCategory(){
+  const sel = document.getElementById('bom-modal-category');
+  if(sel.value === '__new__'){
+    const newVal = document.getElementById('bom-modal-category-new').value.trim();
+    return newVal || 'Unorganized';
+  }
+  return sel.value || 'Unorganized';
 }
 
 function closeBomModal(){
@@ -3419,18 +3719,25 @@ function closeBomModal(){
 function saveBomItem(){
   const name = document.getElementById('bom-modal-name').value.trim();
   if(!name){ alert('Item name is required'); return; }
+  const existing = editingBomId ? bomItems.find(i=>i.id===editingBomId) : null;
   const item = {
-    id: editingBomId || bomGenId(),
-    name,
-    category: document.getElementById('bom-modal-category').value.trim()||'General',
+    id: editingBomId !== null ? editingBomId : bomGenId(),
+    task: name,
+    description: document.getElementById('bom-modal-description').value.trim(),
+    category: getBomModalCategory(),
+    owner: document.getElementById('bom-modal-owner').value || 'Unassigned',
+    manufacturer: document.getElementById('bom-modal-manufacturer').value.trim(),
     vendor: document.getElementById('bom-modal-vendor').value.trim(),
+    partNumber: document.getElementById('bom-modal-partnum').value.trim(),
     qty: Number(document.getElementById('bom-modal-qty').value)||1,
     unitCost: Number(document.getElementById('bom-modal-unitcost').value)||0,
-    status: document.getElementById('bom-modal-status').value,
+    procStatus: document.getElementById('bom-modal-status').value || 'Not ordered',
     leadTime: document.getElementById('bom-modal-leadtime').value.trim(),
     notes: document.getElementById('bom-modal-notes').value.trim(),
+    linkedTaskId: document.getElementById('bom-modal-linked-task').value.trim() || null,
+    notesLog: existing ? (existing.notesLog||[]) : []
   };
-  if(editingBomId){
+  if(editingBomId !== null){
     const idx = bomItems.findIndex(i=>i.id===editingBomId);
     if(idx>=0) bomItems[idx] = item;
   } else {
@@ -3439,217 +3746,140 @@ function saveBomItem(){
   saveBom(); closeBomModal(); renderBom();
 }
 
-function confirmDeleteBomItem(){
-  if(!editingBomId) return;
+function deleteBomItem(id){
+  const tid = (id !== undefined) ? id : editingBomId;
+  if(tid === null || tid === undefined) return;
   if(!confirm('Delete this BOM item?')) return;
-  bomItems = bomItems.filter(i=>i.id!==editingBomId);
-  saveBom(); closeBomModal(); renderBom();
+  bomItems = bomItems.filter(i=>i.id!==tid && i.id!==Number(tid));
+  if(editingBomId !== null) closeBomModal();
+  saveBom(); renderBom();
 }
 
-function deleteBomItem(){ confirmDeleteBomItem(); }
+// ===== NOTES LOG =====
+let _currentNotesLog = [];
 
-// Close BOM modal on overlay click
-document.addEventListener('click', e=>{
-  if(e.target.id==='bom-modal') closeBomModal();
-});
-
-// ---- IMPORT ----
-function triggerBomImport(){
-  document.getElementById('bom-import-input').value = '';
-  document.getElementById('bom-import-input').click();
+function getTaskNotesLog(t){
+  if(!t) return [];
+  if(Array.isArray(t.notesLog) && t.notesLog.length > 0) return t.notesLog;
+  if(typeof t.notes === 'string' && t.notes.trim()){
+    return [{ text: t.notes.trim(), author: 'System', ts: 'Prior to notes log' }];
+  }
+  return [];
 }
 
-function handleBomImport(event){
-  const file = event.target.files[0];
-  if(!file) return;
-  const ext = file.name.split('.').pop().toLowerCase();
-  if(ext === 'csv'){
-    const reader = new FileReader();
-    reader.onload = e => parseBomCSV(e.target.result, file.name);
-    reader.readAsText(file);
-  } else if(ext === 'xls' || ext === 'xlsx'){
-    const reader = new FileReader();
-    reader.onload = e => parseBomExcel(e.target.result, file.name);
-    reader.readAsArrayBuffer(file);
+function renderNotesLog(log){
+  _currentNotesLog = Array.isArray(log) ? [...log] : [];
+  const el = document.getElementById('modal-notes-log');
+  if(!el) return;
+  if(!_currentNotesLog.length){
+    el.innerHTML = '<div style="padding:12px 14px;font-size:12px;color:var(--text-muted);">No notes yet.</div>';
   } else {
-    alert('Please upload a .csv, .xls, or .xlsx file.');
+    const reversed = [..._currentNotesLog].reverse();
+    el.innerHTML = reversed.map((entry, i) => `
+      <div style="padding:9px 14px;${i < reversed.length-1 ? 'border-bottom:1px solid rgba(37,45,64,.5);' : ''}">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+          <span style="font-size:11px;font-weight:600;color:var(--accent2);">${entry.author||'Unknown'}</span>
+          <span style="font-size:10px;color:var(--text-muted);font-family:var(--mono);">${entry.ts||''}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.5;">${entry.text}</div>
+      </div>`).join('');
   }
 }
 
-function parseBomCSV(text, filename){
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  if(lines.length < 2){ alert('File appears empty or has no data rows.'); return; }
+function getModalNotesLog(){ return [..._currentNotesLog]; }
 
-  // Parse header row — flexible column matching
-  const headers = parseCSVRow(lines[0]).map(h => h.toLowerCase().trim());
-  const colMap = detectBomColumns(headers);
-
-  const imported = [];
-  for(let i = 1; i < lines.length; i++){
-    const vals = parseCSVRow(lines[i]);
-    if(vals.every(v => !v.trim())) continue; // skip blank rows
-    const item = buildBomItemFromRow(vals, colMap);
-    if(item.name) imported.push(item);
-  }
-
-  confirmBomImport(imported, filename);
+function addModalNote(){
+  const input = document.getElementById('modal-notes-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const author = (typeof fbConfig !== 'undefined' && fbConfig.user && fbConfig.user.trim())
+    ? fbConfig.user.trim() : 'Unknown';
+  const now = new Date();
+  const ts = now.toLocaleString('en-US',{
+    month:'short', day:'numeric', year:'numeric',
+    hour:'numeric', minute:'2-digit', second:'2-digit', hour12:true
+  });
+  _currentNotesLog = [..._currentNotesLog, { text, author, ts }];
+  renderNotesLog(_currentNotesLog);
+  input.value = '';
 }
 
-function parseCSVRow(line){
-  const result = [];
-  let cur = '', inQuote = false;
-  for(let i = 0; i < line.length; i++){
-    const c = line[i];
-    if(c === '"'){ inQuote = !inQuote; }
-    else if(c === ',' && !inQuote){ result.push(cur.trim()); cur = ''; }
-    else { cur += c; }
-  }
-  result.push(cur.trim());
-  return result;
-}
-
-function parseBomExcel(buffer, filename){
-  // Use SheetJS if available, otherwise fall back to HTML table parsing
-  try {
-    // Try to load SheetJS dynamically
-    if(typeof XLSX !== 'undefined'){
-      readWithSheetJS(buffer, filename);
-    } else {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-      script.onload = () => readWithSheetJS(buffer, filename);
-      script.onerror = () => alert('Could not load Excel parser. Please save your file as CSV and import that instead.');
-      document.head.appendChild(script);
-    }
-  } catch(e){
-    alert('Excel parsing failed. Please save as CSV and import that instead.\n\nError: ' + e.message);
-  }
-}
-
-function readWithSheetJS(buffer, filename){
-  try {
-    const wb = XLSX.read(buffer, {type:'array'});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-    if(data.length < 2){ alert('File appears empty.'); return; }
-    const headers = data[0].map(h => String(h).toLowerCase().trim());
-    const colMap = detectBomColumns(headers);
-    const imported = [];
-    for(let i = 1; i < data.length; i++){
-      const vals = data[i].map(v => String(v === null || v === undefined ? '' : v));
-      if(vals.every(v => !v.trim())) continue;
-      const item = buildBomItemFromRow(vals, colMap);
-      if(item.name) imported.push(item);
-    }
-    confirmBomImport(imported, filename);
-  } catch(e){
-    alert('Could not read Excel file: ' + e.message + '\n\nTry saving as CSV instead.');
-  }
-}
-
-function detectBomColumns(headers){
-  // Flexible matching — handles various column name conventions
-  const find = (...terms) => {
-    for(const t of terms){
-      const idx = headers.findIndex(h => h.includes(t));
-      if(idx >= 0) return idx;
-    }
-    return -1;
-  };
-  return {
-    name:     find('item','name','description','part','component'),
-    category: find('category','cat','type','group','section'),
-    vendor:   find('vendor','supplier','source','manufacturer','mfg'),
-    qty:      find('qty','quantity','count','num','amount'),
-    unitCost: find('unit cost','unit price','price','cost per','unit$','$/unit','each'),
-    totalCost:find('total cost','total price','extended','total$','subtotal'),
-    status:   find('status','state','progress','procurement'),
-    leadTime: find('lead time','lead','delivery','eta','weeks','days'),
-    notes:    find('notes','note','comments','comment','remarks','description'),
-  };
-}
-
-function buildBomItemFromRow(vals, colMap){
-  const get = (idx) => idx >= 0 && idx < vals.length ? String(vals[idx]).trim() : '';
-  const getNum = (idx) => {
-    const v = get(idx).replace(/[$,\s]/g,'');
-    return isNaN(Number(v)) ? 0 : Number(v);
-  };
-
-  // Determine unit cost — if only total and qty given, back-calculate
-  let unitCost = colMap.unitCost >= 0 ? getNum(colMap.unitCost) : 0;
-  const qty = colMap.qty >= 0 ? (getNum(colMap.qty) || 1) : 1;
-  if(!unitCost && colMap.totalCost >= 0){
-    const total = getNum(colMap.totalCost);
-    if(total && qty) unitCost = total / qty;
-  }
-
-  // Normalize status
-  const rawStatus = get(colMap.status).toLowerCase();
-  let status = 'Pending';
-  if(rawStatus.includes('receiv')) status = 'Received';
-  else if(rawStatus.includes('order')) status = 'Ordered';
-  else if(rawStatus.includes('quot')) status = 'Quoted';
-  else if(rawStatus.includes('back') || rawStatus.includes('bo')) status = 'Backordered';
-
-  return {
-    id: bomGenId() + Math.random().toString(36).slice(2,6),
-    name:     get(colMap.name),
-    category: get(colMap.category) || 'General',
-    vendor:   get(colMap.vendor),
-    qty:      qty,
-    unitCost: unitCost,
-    status:   status,
-    leadTime: get(colMap.leadTime),
-    notes:    get(colMap.notes),
-  };
-}
-
-function confirmBomImport(imported, filename){
-  if(imported.length === 0){
-    alert(`No valid rows found in "${filename}".\n\nMake sure your file has a header row with columns like: Item, Category, Vendor, Qty, Unit Cost, Status.`);
-    return;
-  }
-
-  const merge = bomItems.length > 0 &&
-    confirm(`Found ${imported.length} items in "${filename}".\n\nOK = Merge with existing ${bomItems.length} items\nCancel = Replace all existing items`);
-
-  if(merge){
-    bomItems = [...bomItems, ...imported];
+// ===== BOM TOGGLE =====
+function setBomToggle(on){
+  const toggle = document.getElementById('modal-bom-toggle');
+  const sw = document.getElementById('modal-bom-switch');
+  const knob = document.getElementById('modal-bom-knob');
+  const title = document.getElementById('modal-bom-toggle-title');
+  const sub = document.getElementById('modal-bom-toggle-sub');
+  const fields = document.getElementById('modal-bom-fields');
+  if(on){
+    toggle.style.background = 'rgba(59,130,246,.1)';
+    toggle.style.borderColor = 'var(--accent)';
+    sw.style.background = 'var(--accent)';
+    knob.style.left = '19px';
+    title.style.color = 'var(--accent)';
+    sub.textContent = 'Task will appear in the Bill of Materials tab';
+    fields.style.display = 'flex';
   } else {
-    bomItems = imported;
+    toggle.style.background = 'var(--surface2)';
+    toggle.style.borderColor = 'var(--border)';
+    sw.style.background = 'var(--border)';
+    knob.style.left = '3px';
+    title.style.color = 'var(--text)';
+    sub.textContent = 'Show in Bill of Materials with cost & vendor fields';
+    fields.style.display = 'none';
   }
-  saveBom();
-  renderBom();
-  alert(`✓ Imported ${imported.length} items${merge ? ' (merged)' : ''}.\n\nReview the table and adjust any columns that weren't detected automatically. You can edit any item by clicking the ✎ button.`);
+  toggle.dataset.on = on ? '1' : '0';
+}
+
+function toggleBomFields(){
+  const isOn = document.getElementById('modal-bom-toggle').dataset.on === '1';
+  setBomToggle(!isOn);
+}
+
+function isBomToggleOn(){
+  return document.getElementById('modal-bom-toggle').dataset.on === '1';
+}
+
+function updateModalTotal(){
+  const cost = parseFloat(document.getElementById('modal-unit-cost').value)||0;
+  const qty = parseInt(document.getElementById('modal-qty').value)||0;
+  const el = document.getElementById('modal-total-cost');
+  if(cost && qty) el.textContent = '$' + (cost * qty).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  else el.textContent = '—';
+}
+
+function updateBomModalTotal(){
+  const cost = parseFloat(document.getElementById('bom-modal-unitcost').value)||0;
+  const qty = parseInt(document.getElementById('bom-modal-qty').value)||0;
+  const el = document.getElementById('bom-modal-total');
+  if(el) el.textContent = cost && qty ? fmtCost(cost*qty) : '—';
 }
 
 // ---- EXPORT ----
 function exportBomCSV(){
-  const headers = ['Category','Item','Vendor','Qty','Unit Cost','Total Cost','Status','Lead Time','Notes'];
-  const rows = bomItems.map(i=>[
-    i.category||'', i.name||'', i.vendor||'',
-    i.qty||0,
-    i.unitCost||0,
-    (Number(i.unitCost)||0)*(Number(i.qty)||0),
-    i.status||'', i.leadTime||'', (i.notes||'').replace(/,/g,';')
-  ]);
-  const totalCost = bomItems.reduce((s,i)=>(s+(Number(i.unitCost)||0)*(Number(i.qty)||0)),0);
-  rows.push(['','','','','TOTAL',totalCost.toFixed(2),'','','']);
+  const headers = ['ID','Category','Item','Owner','Vendor','Proc Status','Unit Cost','Qty','Total Cost','Notes'];
+  const rows = bomItems.map(i=>{
+    const cost = parseFloat(i.unitCost)||0;
+    const qty = parseInt(i.qty)||0;
+    return [i.id, i.category||'', i.task||'', i.owner||'', i.vendor||'', i.procStatus||'Not ordered', cost.toFixed(2), qty, (cost*qty).toFixed(2), (i.notes||'').replace(/,/g,';')];
+  });
+  const totalCost = bomItems.reduce((s,i)=>(s+(parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)),0);
+  rows.push(['','','','','','TOTAL','','',totalCost.toFixed(2),'']);
   const csv = [headers, ...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
   downloadFile('Bubbles_BOM.csv', 'text/csv', csv);
 }
 
 function exportBomExcel(){
-  // Build a simple HTML table that Excel can open as .xls
-  const headers = ['Category','Item','Vendor','Qty','Unit Cost ($)','Total Cost ($)','Status','Lead Time','Notes'];
-  const totalCost = bomItems.reduce((s,i)=>(s+(Number(i.unitCost)||0)*(Number(i.qty)||0)),0);
+  const headers = ['ID','Category','Item','Owner','Vendor','Proc Status','Unit Cost ($)','Qty','Total Cost ($)','Notes'];
+  const totalCost = bomItems.reduce((s,i)=>(s+(parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)),0);
   let table = `<table border="1"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
   for(const i of bomItems){
-    const total = (Number(i.unitCost)||0)*(Number(i.qty)||0);
-    table += `<tr><td>${i.category||''}</td><td>${i.name||''}</td><td>${i.vendor||''}</td><td>${i.qty||0}</td><td>${Number(i.unitCost||0).toFixed(2)}</td><td>${total.toFixed(2)}</td><td>${i.status||''}</td><td>${i.leadTime||''}</td><td>${i.notes||''}</td></tr>`;
+    const cost = parseFloat(i.unitCost)||0;
+    const qty = parseInt(i.qty)||0;
+    table += `<tr><td>${i.id}</td><td>${i.category||''}</td><td>${i.task||''}</td><td>${i.owner||''}</td><td>${i.vendor||''}</td><td>${i.procStatus||'Not ordered'}</td><td>${cost.toFixed(2)}</td><td>${qty}</td><td>${(cost*qty).toFixed(2)}</td><td>${i.notes||''}</td></tr>`;
   }
-  table += `<tr><td colspan="5"><strong>TOTAL</strong></td><td><strong>${totalCost.toFixed(2)}</strong></td><td colspan="3"></td></tr>`;
+  table += `<tr><td colspan="8" style="text-align:right"><strong>TOTAL</strong></td><td><strong>${totalCost.toFixed(2)}</strong></td><td></td></tr>`;
   table += '</tbody></table>';
   const xls = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body>${table}</body></html>`;
   downloadFile('Bubbles_BOM.xls', 'application/vnd.ms-excel', xls);
@@ -3664,7 +3894,6 @@ function downloadFile(filename, mimeType, content){
   document.body.removeChild(a);
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
 }
-
 // ===== GITHUB BOM SYNC =====
 const GH_REPO = 'WFA-Kasey-Adams/Bubbles_Dashboard';
 const GH_FILE = 'bom.json';
@@ -3727,14 +3956,20 @@ async function pushBomToGithub(silent=false){
   if(!silent) ghLog('Pushing BOM to GitHub…', 'info');
 
   try {
-    // Get current file SHA (needed for updates)
+    // Always fetch fresh SHA with cache-busting to avoid stale data
     let sha = null;
-    const getResp = await fetch(GH_API, {
-      headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
+    const getResp = await fetch(GH_API + '?t=' + Date.now(), {
+      headers: {
+        'Authorization': `token ${ghToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Cache-Control': 'no-cache'
+      }
     });
     if(getResp.ok){
       const existing = await getResp.json();
       sha = existing.sha;
+    } else if(getResp.status === 401){
+      throw new Error('Token rejected — check your GitHub token has repo scope');
     } else if(getResp.status !== 404){
       throw new Error(`GitHub API error: ${getResp.status}`);
     }
@@ -3745,10 +3980,9 @@ async function pushBomToGithub(silent=false){
       exportedBy: fbConfig.user || 'Dashboard',
       repo: GH_REPO,
       totalItems: bomItems.length,
-      totalBudget: bomItems.reduce((s,i)=>(s+(Number(i.unitCost)||0)*(Number(i.qty)||0)),0),
+      totalBudget: bomItems.reduce((s,i)=>(s+(parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)),0),
       items: bomItems
     };
-
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
     const body = {
       message: `BOM update — ${bomItems.length} items · ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
@@ -3765,6 +3999,13 @@ async function pushBomToGithub(silent=false){
       },
       body: JSON.stringify(body)
     });
+
+    if(putResp.status === 409){
+      // Conflict — SHA changed between GET and PUT, retry once
+      ghLog('SHA conflict — retrying…', 'info');
+      await pushBomToGithub(silent);
+      return;
+    }
 
     if(!putResp.ok){
       const err = await putResp.json().catch(()=>({}));
