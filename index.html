@@ -723,6 +723,100 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 
 /* Small phones */
 
+/* ---- BOM ---- */
+.bom-summary {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px;
+}
+.bom-stat {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; position: relative; overflow: hidden;
+}
+.bom-stat::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background: var(--bom-accent, var(--accent));
+}
+.bom-stat-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-bottom:6px; }
+.bom-stat-value { font-family:var(--mono); font-size:22px; font-weight:700; color:var(--text); }
+.bom-stat-sub { font-size:11px; color:var(--text-muted); margin-top:3px; }
+
+.bom-toolbar {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px;
+}
+.bom-search {
+  flex: 1; min-width: 160px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-family: var(--sans); font-size: 13px;
+  padding: 7px 12px; outline: none;
+}
+.bom-search:focus { border-color: var(--accent); }
+
+.bom-table-wrap {
+  overflow-x: auto; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface);
+}
+.bom-table {
+  width: 100%; border-collapse: collapse; font-size: 12px; min-width: 900px;
+}
+.bom-table th {
+  background: var(--surface2); color: var(--text-muted); font-family: var(--mono);
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border);
+  white-space: nowrap; cursor: pointer; user-select: none;
+}
+.bom-table th:hover { color: var(--text); }
+.bom-table th.sorted-asc::after { content: ' ↑'; color: var(--accent); }
+.bom-table th.sorted-desc::after { content: ' ↓'; color: var(--accent); }
+.bom-table td {
+  padding: 9px 12px; border-bottom: 1px solid rgba(37,45,64,.5);
+  vertical-align: middle; color: var(--text);
+}
+.bom-table tr:last-child td { border-bottom: none; }
+.bom-table tr:hover td { background: rgba(59,130,246,.04); }
+.bom-table tr.bom-total-row td {
+  background: var(--surface2); font-weight: 700; font-family: var(--mono);
+  font-size: 11px; border-top: 2px solid var(--border);
+}
+
+/* BOM inline editing */
+.bom-cell-edit {
+  background: var(--surface2); border: 1px solid var(--accent); border-radius: 5px;
+  color: var(--text); font-family: var(--sans); font-size: 12px; padding: 3px 7px;
+  outline: none; width: 100%; min-width: 60px;
+}
+.bom-cell-edit.wide { min-width: 140px; }
+
+/* BOM progress badges */
+.bom-progress {
+  display: inline-block; padding: 3px 10px; border-radius: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; cursor: pointer;
+  white-space: nowrap;
+}
+.bp-ordered { background: rgba(59,130,246,.15); color: var(--accent); border: 1px solid rgba(59,130,246,.3); }
+.bp-received { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
+.bp-pending { background: rgba(100,116,139,.12); color: var(--text-muted); border: 1px solid rgba(100,116,139,.2); }
+.bp-quoted { background: rgba(139,92,246,.15); color: #c4b5fd; border: 1px solid rgba(139,92,246,.3); }
+.bp-backordered { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
+
+.bom-cost { font-family: var(--mono); text-align: right; }
+.bom-qty { font-family: var(--mono); text-align: center; }
+.bom-actions { white-space: nowrap; }
+.bom-del-btn {
+  background: none; border: none; color: var(--text-muted); cursor: pointer;
+  font-size: 14px; padding: 2px 5px; border-radius: 4px; opacity: 0; transition: all .15s;
+}
+.bom-table tr:hover .bom-del-btn { opacity: 1; }
+.bom-del-btn:hover { color: var(--red); background: rgba(239,68,68,.1); }
+
+/* BOM mobile */
+@media (max-width: 768px) {
+  .bom-summary { grid-template-columns: repeat(2, 1fr); }
+  .bom-toolbar { gap: 6px; }
+  .bom-table-wrap { border-radius: 10px; }
+}
+@media (max-width: 480px) {
+  .bom-summary { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bom-stat-value { font-size: 18px; }
+}
+
 /* ---- MOBILE QUICK PROMPTS (collapsible) ---- */
 .qp-mobile-toggle {
   display: none; width: 100%; padding: 10px 14px;
@@ -844,6 +938,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
     <button class="nav-tab" onclick="showTab('gantt')">Gantt</button>
     <button class="nav-tab" onclick="showTab('team')">Team</button>
     <button class="nav-tab" onclick="showTab('workstream')">Work Streams</button>
+    <button class="nav-tab" onclick="showTab('bom')">BOM</button>
     <button class="nav-tab" onclick="showTab('ai')">AI Assistant</button>
     <button class="nav-tab" onclick="showTab('skills')">Weekly Briefings</button>
   </div>
@@ -860,6 +955,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
   <button class="mobile-menu-tab" onclick="mobileNav('gantt')">📅 Gantt</button>
   <button class="mobile-menu-tab" onclick="mobileNav('team')">👥 Team</button>
   <button class="mobile-menu-tab" onclick="mobileNav('workstream')">🔀 Work Streams</button>
+  <button class="mobile-menu-tab" onclick="mobileNav('bom')">📦 BOM</button>
   <div class="mobile-menu-divider"></div>
   <button class="mobile-menu-tab" onclick="mobileNav('ai')">🤖 AI Assistant</button>
   <button class="mobile-menu-tab" onclick="mobileNav('skills')">📋 Weekly Briefings</button>
@@ -1046,6 +1142,136 @@ What would you like to know?</div>
     <div>No tasks found for your name.</div>
     <div style="font-size:12px;margin-top:8px;">Make sure your name matches exactly how it appears in the Gantt.</div>
     <button class="toolbar-btn" onclick="changeUserName()" style="margin-top:16px;">✎ Update my name</button>
+  </div>
+</div>
+
+<!-- BOM -->
+<div id="tab-bom" class="main">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+    <div>
+      <div style="font-size:22px;font-weight:600;color:var(--text)">Bill of Materials</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">Procurement tracker · owned by Linda · synced to Firebase</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="toolbar-btn" onclick="openAddBomItem()" style="color:var(--green);border-color:rgba(16,185,129,.3);">＋ Add Item</button>
+      <button class="toolbar-btn" onclick="triggerBomImport()">↑ Import CSV / Excel</button>
+      <input type="file" id="bom-import-input" accept=".csv,.xls,.xlsx" style="display:none" onchange="handleBomImport(event)">
+      <button class="toolbar-btn" onclick="exportBomCSV()">↓ Export CSV</button>
+      <button class="toolbar-btn" onclick="exportBomExcel()">↓ Export Excel</button>
+    </div>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="bom-summary">
+    <div class="bom-stat" style="--bom-accent:var(--accent)">
+      <div class="bom-stat-label">Total Items</div>
+      <div class="bom-stat-value" id="bom-stat-total">—</div>
+      <div class="bom-stat-sub">line items</div>
+    </div>
+    <div class="bom-stat" style="--bom-accent:var(--amber)">
+      <div class="bom-stat-label">Total Budget</div>
+      <div class="bom-stat-value" id="bom-stat-budget">—</div>
+      <div class="bom-stat-sub">estimated cost</div>
+    </div>
+    <div class="bom-stat" style="--bom-accent:var(--green)">
+      <div class="bom-stat-label">Received</div>
+      <div class="bom-stat-value" id="bom-stat-received">—</div>
+      <div class="bom-stat-sub" id="bom-stat-received-pct">of items</div>
+    </div>
+    <div class="bom-stat" style="--bom-accent:var(--accent2)">
+      <div class="bom-stat-label">Ordered</div>
+      <div class="bom-stat-value" id="bom-stat-ordered">—</div>
+      <div class="bom-stat-sub">items on order</div>
+    </div>
+    <div class="bom-stat" style="--bom-accent:var(--red)">
+      <div class="bom-stat-label">Pending</div>
+      <div class="bom-stat-value" id="bom-stat-pending">—</div>
+      <div class="bom-stat-sub">not yet ordered</div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="bom-toolbar">
+    <input class="bom-search" id="bom-search" placeholder="Search items, vendors..." oninput="renderBom()">
+    <select class="filter-select" id="bom-filter-status" onchange="renderBom()">
+      <option value="">All Statuses</option>
+      <option value="Pending">Pending</option>
+      <option value="Quoted">Quoted</option>
+      <option value="Ordered">Ordered</option>
+      <option value="Received">Received</option>
+      <option value="Backordered">Backordered</option>
+    </select>
+    <select class="filter-select" id="bom-filter-category" onchange="renderBom()">
+      <option value="">All Categories</option>
+    </select>
+    <span id="bom-count" style="font-size:12px;color:var(--text-muted);"></span>
+  </div>
+
+  <!-- Table -->
+  <div class="bom-table-wrap">
+    <table class="bom-table" id="bom-table"></table>
+  </div>
+</div>
+
+<!-- BOM ADD/EDIT MODAL -->
+<div class="modal-overlay" id="bom-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="bom-modal-title">Add BOM Item</div>
+      <button class="modal-close" onclick="closeBomModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <div class="field-label">Item Name</div>
+        <input class="field-input" id="bom-modal-name" type="text" placeholder="e.g. Microchannel Heat Exchanger">
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Category</div>
+          <input class="field-input" id="bom-modal-category" type="text" list="bom-category-list" placeholder="e.g. Heat Exchangers">
+          <datalist id="bom-category-list"></datalist>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Vendor</div>
+          <input class="field-input" id="bom-modal-vendor" type="text" placeholder="e.g. Hylita">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Qty</div>
+          <input class="field-input" id="bom-modal-qty" type="number" min="1" value="1" placeholder="1">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Unit Cost ($)</div>
+          <input class="field-input" id="bom-modal-unitcost" type="number" min="0" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <div class="field-label">Status</div>
+          <select class="field-select" id="bom-modal-status">
+            <option value="Pending">Pending</option>
+            <option value="Quoted">Quoted</option>
+            <option value="Ordered">Ordered</option>
+            <option value="Received">Received</option>
+            <option value="Backordered">Backordered</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Lead Time</div>
+          <input class="field-input" id="bom-modal-leadtime" type="text" placeholder="e.g. 22 days">
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Notes</div>
+        <input class="field-input" id="bom-modal-notes" type="text" placeholder="Any notes, part numbers, links...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="bom-modal-delete" onclick="deleteBomItem()" style="display:none;">🗑 Delete</button>
+      <button class="btn-secondary" onclick="closeBomModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveBomItem()">Save Item</button>
+    </div>
   </div>
 </div>
 
@@ -1652,7 +1878,7 @@ function showTab(tab){
     if(!sel.innerHTML) sel.innerHTML = streams.map(s=>`<option value="${s}">${s}</option>`).join('');
     renderWorkStreamView(sel.value || streams[0]);
   }
-  if(tab === 'gantt') renderGantt();
+  if(tab === 'bom') { renderBom(); pullBomFromFirebase(); }
 }
 
 function toggleMobileMenu(){
@@ -2886,9 +3112,491 @@ function quickCycleStatus(id) {
   renderStats();
 }
 
+// ===== BOM =====
+let bomItems = [];
+let bomSortCol = 'category';
+let bomSortDir = 'asc';
+let editingBomId = null;
+
+function loadBom(){
+  try {
+    const saved = localStorage.getItem('bubbles_bom_v2');
+    if(saved){ bomItems = JSON.parse(saved); }
+    else { bomItems = []; }
+  } catch(e){ bomItems = []; }
+}
+
+function saveBom(){
+  localStorage.setItem('bubbles_bom_v2', JSON.stringify(bomItems));
+  scheduleBomPush();
+}
+
+let bomPushDebounce = null;
+function scheduleBomPush(){
+  if(!fbConnected) return;
+  clearTimeout(bomPushDebounce);
+  bomPushDebounce = setTimeout(async ()=>{
+    try {
+      const base = fbConfig.url.replace(/\/$/,'');
+      const path = (fbConfig.path||'bubbles/gantt').replace(/^\//, '').replace(/\//g, '/').replace('gantt','bom');
+      await fetch(`${base}/bubbles/bom.json`,{
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ savedAt: new Date().toISOString(), savedBy: fbConfig.user, items: bomItems })
+      });
+    } catch(e){ console.warn('BOM push failed', e); }
+  }, 4000);
+}
+
+async function pullBomFromFirebase(){
+  try {
+    const base = fbConfig.url.replace(/\/$/, '');
+    const resp = await fetch(`${base}/bubbles/bom.json`);
+    if(!resp.ok) return;
+    const data = await resp.json();
+    if(data && data.items && data.items.length > 0){
+      bomItems = data.items;
+      localStorage.setItem('bubbles_bom_v1', JSON.stringify(bomItems));
+      renderBom();
+    }
+  } catch(e){ console.warn('BOM pull failed', e); }
+}
+
+function bomGenId(){
+  return 'b' + Date.now();
+}
+
+function bomProgressClass(status){
+  const map = { Ordered:'bp-ordered', Received:'bp-received', Pending:'bp-pending', Quoted:'bp-quoted', Backordered:'bp-backordered' };
+  return map[status] || 'bp-pending';
+}
+
+function fmtCurrency(n){
+  if(!n && n !== 0) return '—';
+  return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function cycleBomStatus(id){
+  const item = bomItems.find(i=>i.id===id);
+  if(!item) return;
+  const statuses = ['Pending','Quoted','Ordered','Received','Backordered'];
+  item.status = statuses[(statuses.indexOf(item.status)+1) % statuses.length];
+  saveBom(); renderBom();
+}
+
+function renderBom(){
+  const search = (document.getElementById('bom-search')||{value:''}).value.toLowerCase();
+  const statusF = (document.getElementById('bom-filter-status')||{value:''}).value;
+  const catF = (document.getElementById('bom-filter-category')||{value:''}).value;
+
+  let filtered = bomItems.filter(i=>{
+    if(statusF && i.status !== statusF) return false;
+    if(catF && i.category !== catF) return false;
+    if(search && !i.name.toLowerCase().includes(search) && !(i.vendor||'').toLowerCase().includes(search) && !(i.category||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a,b)=>{
+    let av = a[bomSortCol]||'', bv = b[bomSortCol]||'';
+    if(bomSortCol==='unitCost'||bomSortCol==='qty'||bomSortCol==='totalCost'){
+      av = Number(av)||0; bv = Number(bv)||0;
+      return bomSortDir==='asc' ? av-bv : bv-av;
+    }
+    return bomSortDir==='asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+  });
+
+  // Empty state
+  if(bomItems.length === 0){
+    document.getElementById('bom-table').innerHTML = `
+      <tbody><tr><td colspan="10" style="text-align:center;padding:60px 20px;">
+        <div style="font-size:32px;margin-bottom:12px;">📦</div>
+        <div style="font-size:15px;color:var(--text);font-weight:600;margin-bottom:8px;">No BOM items yet</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">Import your existing spreadsheet or add items manually</div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="triggerBomImport()">↑ Import CSV / Excel</button>
+          <button class="btn-secondary" onclick="openAddBomItem()">＋ Add Item Manually</button>
+        </div>
+      </td></tr></tbody>`;
+    document.getElementById('bom-stat-total').textContent = '0';
+    document.getElementById('bom-stat-budget').textContent = '—';
+    document.getElementById('bom-stat-received').textContent = '0';
+    document.getElementById('bom-stat-received-pct').textContent = 'of 0 items';
+    document.getElementById('bom-stat-ordered').textContent = '0';
+    document.getElementById('bom-stat-pending').textContent = '0';
+    document.getElementById('bom-count').textContent = '';
+    return;
+  }
+  const cats = [...new Set(bomItems.map(i=>i.category).filter(Boolean))].sort();
+  const catSel = document.getElementById('bom-filter-category');
+  const curCat = catSel.value;
+  catSel.innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option value="${c}" ${c===curCat?'selected':''}>${c}</option>`).join('');
+
+  document.getElementById('bom-count').textContent = `Showing ${filtered.length} of ${bomItems.length} items`;
+
+  // Stats
+  const totalCost = bomItems.reduce((s,i)=> s + (Number(i.unitCost)||0)*(Number(i.qty)||0), 0);
+  const received = bomItems.filter(i=>i.status==='Received').length;
+  const ordered = bomItems.filter(i=>i.status==='Ordered').length;
+  const pending = bomItems.filter(i=>i.status==='Pending').length;
+  document.getElementById('bom-stat-total').textContent = bomItems.length;
+  document.getElementById('bom-stat-budget').textContent = totalCost ? fmtCurrency(totalCost) : '—';
+  document.getElementById('bom-stat-received').textContent = received;
+  document.getElementById('bom-stat-received-pct').textContent = `of ${bomItems.length} items (${Math.round(received/bomItems.length*100)||0}%)`;
+  document.getElementById('bom-stat-ordered').textContent = ordered;
+  document.getElementById('bom-stat-pending').textContent = pending;
+
+  // Build table
+  const cols = [
+    {key:'category', label:'Category'},
+    {key:'name', label:'Item'},
+    {key:'vendor', label:'Vendor'},
+    {key:'qty', label:'Qty'},
+    {key:'unitCost', label:'Unit Cost'},
+    {key:'totalCost', label:'Total Cost'},
+    {key:'status', label:'Status'},
+    {key:'leadTime', label:'Lead Time'},
+    {key:'notes', label:'Notes'},
+    {key:'_actions', label:''},
+  ];
+
+  let html = `<thead><tr>${cols.map(c=> c.key==='_actions' ? '<th></th>' :
+    `<th onclick="sortBom('${c.key}')" class="${bomSortCol===c.key?'sorted-'+bomSortDir:''}">${c.label}</th>`
+  ).join('')}</tr></thead><tbody>`;
+
+  for(const item of filtered){
+    const total = (Number(item.unitCost)||0) * (Number(item.qty)||0);
+    html += `<tr data-bom-id="${item.id}">
+      <td><span style="font-size:11px;color:var(--text-dim)">${item.category||'—'}</span></td>
+      <td style="font-weight:500;max-width:220px;">${item.name}</td>
+      <td style="color:var(--text-dim)">${item.vendor||'—'}</td>
+      <td class="bom-qty">${item.qty||0}</td>
+      <td class="bom-cost">${item.unitCost ? fmtCurrency(item.unitCost) : '—'}</td>
+      <td class="bom-cost" style="color:${total?'var(--text)':'var(--text-muted)'}">${total ? fmtCurrency(total) : '—'}</td>
+      <td><span class="bom-progress ${bomProgressClass(item.status)}" onclick="cycleBomStatus('${item.id}')" title="Click to cycle status">${item.status||'Pending'}</span></td>
+      <td style="color:var(--text-muted);font-size:11px;">${item.leadTime||'—'}</td>
+      <td style="color:var(--text-muted);font-size:11px;max-width:200px;">${item.notes||''}</td>
+      <td class="bom-actions">
+        <button class="toolbar-btn" onclick="openEditBomItem('${item.id}')" style="padding:3px 8px;font-size:11px;">✎</button>
+        <button class="bom-del-btn" onclick="confirmDeleteBomItem('${item.id}')" title="Delete">✕</button>
+      </td>
+    </tr>`;
+  }
+
+  // Totals row
+  const filteredTotal = filtered.reduce((s,i)=> s + (Number(i.unitCost)||0)*(Number(i.qty)||0), 0);
+  html += `<tr class="bom-total-row">
+    <td colspan="5" style="text-align:right;color:var(--text-muted);">TOTAL (filtered ${filtered.length} items)</td>
+    <td class="bom-cost" style="color:var(--accent2)">${fmtCurrency(filteredTotal)}</td>
+    <td colspan="4"></td>
+  </tr>`;
+
+  html += '</tbody>';
+  document.getElementById('bom-table').innerHTML = html;
+}
+
+function sortBom(col){
+  if(bomSortCol === col){ bomSortDir = bomSortDir==='asc'?'desc':'asc'; }
+  else { bomSortCol = col; bomSortDir = 'asc'; }
+  renderBom();
+}
+
+function openAddBomItem(){
+  editingBomId = null;
+  document.getElementById('bom-modal-title').textContent = 'Add BOM Item';
+  document.getElementById('bom-modal-name').value = '';
+  document.getElementById('bom-modal-category').value = '';
+  document.getElementById('bom-modal-vendor').value = '';
+  document.getElementById('bom-modal-qty').value = '1';
+  document.getElementById('bom-modal-unitcost').value = '';
+  document.getElementById('bom-modal-status').value = 'Pending';
+  document.getElementById('bom-modal-leadtime').value = '';
+  document.getElementById('bom-modal-notes').value = '';
+  document.getElementById('bom-modal-delete').style.display = 'none';
+  // Populate category datalist
+  const cats = [...new Set(bomItems.map(i=>i.category).filter(Boolean))].sort();
+  document.getElementById('bom-category-list').innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+  document.getElementById('bom-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('bom-modal-name').focus(), 100);
+}
+
+function openEditBomItem(id){
+  const item = bomItems.find(i=>i.id===id);
+  if(!item) return;
+  editingBomId = id;
+  document.getElementById('bom-modal-title').textContent = 'Edit BOM Item';
+  document.getElementById('bom-modal-name').value = item.name||'';
+  document.getElementById('bom-modal-category').value = item.category||'';
+  document.getElementById('bom-modal-vendor').value = item.vendor||'';
+  document.getElementById('bom-modal-qty').value = item.qty||1;
+  document.getElementById('bom-modal-unitcost').value = item.unitCost||'';
+  document.getElementById('bom-modal-status').value = item.status||'Pending';
+  document.getElementById('bom-modal-leadtime').value = item.leadTime||'';
+  document.getElementById('bom-modal-notes').value = item.notes||'';
+  document.getElementById('bom-modal-delete').style.display = 'inline-flex';
+  const cats = [...new Set(bomItems.map(i=>i.category).filter(Boolean))].sort();
+  document.getElementById('bom-category-list').innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+  document.getElementById('bom-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('bom-modal-name').focus(), 100);
+}
+
+function closeBomModal(){
+  document.getElementById('bom-modal').classList.remove('open');
+  editingBomId = null;
+}
+
+function saveBomItem(){
+  const name = document.getElementById('bom-modal-name').value.trim();
+  if(!name){ alert('Item name is required'); return; }
+  const item = {
+    id: editingBomId || bomGenId(),
+    name,
+    category: document.getElementById('bom-modal-category').value.trim()||'General',
+    vendor: document.getElementById('bom-modal-vendor').value.trim(),
+    qty: Number(document.getElementById('bom-modal-qty').value)||1,
+    unitCost: Number(document.getElementById('bom-modal-unitcost').value)||0,
+    status: document.getElementById('bom-modal-status').value,
+    leadTime: document.getElementById('bom-modal-leadtime').value.trim(),
+    notes: document.getElementById('bom-modal-notes').value.trim(),
+  };
+  if(editingBomId){
+    const idx = bomItems.findIndex(i=>i.id===editingBomId);
+    if(idx>=0) bomItems[idx] = item;
+  } else {
+    bomItems.push(item);
+  }
+  saveBom(); closeBomModal(); renderBom();
+}
+
+function confirmDeleteBomItem(){
+  if(!editingBomId) return;
+  if(!confirm('Delete this BOM item?')) return;
+  bomItems = bomItems.filter(i=>i.id!==editingBomId);
+  saveBom(); closeBomModal(); renderBom();
+}
+
+function deleteBomItem(){ confirmDeleteBomItem(); }
+
+// Close BOM modal on overlay click
+document.addEventListener('click', e=>{
+  if(e.target.id==='bom-modal') closeBomModal();
+});
+
+// ---- IMPORT ----
+function triggerBomImport(){
+  document.getElementById('bom-import-input').value = '';
+  document.getElementById('bom-import-input').click();
+}
+
+function handleBomImport(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(ext === 'csv'){
+    const reader = new FileReader();
+    reader.onload = e => parseBomCSV(e.target.result, file.name);
+    reader.readAsText(file);
+  } else if(ext === 'xls' || ext === 'xlsx'){
+    const reader = new FileReader();
+    reader.onload = e => parseBomExcel(e.target.result, file.name);
+    reader.readAsArrayBuffer(file);
+  } else {
+    alert('Please upload a .csv, .xls, or .xlsx file.');
+  }
+}
+
+function parseBomCSV(text, filename){
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if(lines.length < 2){ alert('File appears empty or has no data rows.'); return; }
+
+  // Parse header row — flexible column matching
+  const headers = parseCSVRow(lines[0]).map(h => h.toLowerCase().trim());
+  const colMap = detectBomColumns(headers);
+
+  const imported = [];
+  for(let i = 1; i < lines.length; i++){
+    const vals = parseCSVRow(lines[i]);
+    if(vals.every(v => !v.trim())) continue; // skip blank rows
+    const item = buildBomItemFromRow(vals, colMap);
+    if(item.name) imported.push(item);
+  }
+
+  confirmBomImport(imported, filename);
+}
+
+function parseCSVRow(line){
+  const result = [];
+  let cur = '', inQuote = false;
+  for(let i = 0; i < line.length; i++){
+    const c = line[i];
+    if(c === '"'){ inQuote = !inQuote; }
+    else if(c === ',' && !inQuote){ result.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function parseBomExcel(buffer, filename){
+  // Use SheetJS if available, otherwise fall back to HTML table parsing
+  try {
+    // Try to load SheetJS dynamically
+    if(typeof XLSX !== 'undefined'){
+      readWithSheetJS(buffer, filename);
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.onload = () => readWithSheetJS(buffer, filename);
+      script.onerror = () => alert('Could not load Excel parser. Please save your file as CSV and import that instead.');
+      document.head.appendChild(script);
+    }
+  } catch(e){
+    alert('Excel parsing failed. Please save as CSV and import that instead.\n\nError: ' + e.message);
+  }
+}
+
+function readWithSheetJS(buffer, filename){
+  try {
+    const wb = XLSX.read(buffer, {type:'array'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    if(data.length < 2){ alert('File appears empty.'); return; }
+    const headers = data[0].map(h => String(h).toLowerCase().trim());
+    const colMap = detectBomColumns(headers);
+    const imported = [];
+    for(let i = 1; i < data.length; i++){
+      const vals = data[i].map(v => String(v === null || v === undefined ? '' : v));
+      if(vals.every(v => !v.trim())) continue;
+      const item = buildBomItemFromRow(vals, colMap);
+      if(item.name) imported.push(item);
+    }
+    confirmBomImport(imported, filename);
+  } catch(e){
+    alert('Could not read Excel file: ' + e.message + '\n\nTry saving as CSV instead.');
+  }
+}
+
+function detectBomColumns(headers){
+  // Flexible matching — handles various column name conventions
+  const find = (...terms) => {
+    for(const t of terms){
+      const idx = headers.findIndex(h => h.includes(t));
+      if(idx >= 0) return idx;
+    }
+    return -1;
+  };
+  return {
+    name:     find('item','name','description','part','component'),
+    category: find('category','cat','type','group','section'),
+    vendor:   find('vendor','supplier','source','manufacturer','mfg'),
+    qty:      find('qty','quantity','count','num','amount'),
+    unitCost: find('unit cost','unit price','price','cost per','unit$','$/unit','each'),
+    totalCost:find('total cost','total price','extended','total$','subtotal'),
+    status:   find('status','state','progress','procurement'),
+    leadTime: find('lead time','lead','delivery','eta','weeks','days'),
+    notes:    find('notes','note','comments','comment','remarks','description'),
+  };
+}
+
+function buildBomItemFromRow(vals, colMap){
+  const get = (idx) => idx >= 0 && idx < vals.length ? String(vals[idx]).trim() : '';
+  const getNum = (idx) => {
+    const v = get(idx).replace(/[$,\s]/g,'');
+    return isNaN(Number(v)) ? 0 : Number(v);
+  };
+
+  // Determine unit cost — if only total and qty given, back-calculate
+  let unitCost = colMap.unitCost >= 0 ? getNum(colMap.unitCost) : 0;
+  const qty = colMap.qty >= 0 ? (getNum(colMap.qty) || 1) : 1;
+  if(!unitCost && colMap.totalCost >= 0){
+    const total = getNum(colMap.totalCost);
+    if(total && qty) unitCost = total / qty;
+  }
+
+  // Normalize status
+  const rawStatus = get(colMap.status).toLowerCase();
+  let status = 'Pending';
+  if(rawStatus.includes('receiv')) status = 'Received';
+  else if(rawStatus.includes('order')) status = 'Ordered';
+  else if(rawStatus.includes('quot')) status = 'Quoted';
+  else if(rawStatus.includes('back') || rawStatus.includes('bo')) status = 'Backordered';
+
+  return {
+    id: bomGenId() + Math.random().toString(36).slice(2,6),
+    name:     get(colMap.name),
+    category: get(colMap.category) || 'General',
+    vendor:   get(colMap.vendor),
+    qty:      qty,
+    unitCost: unitCost,
+    status:   status,
+    leadTime: get(colMap.leadTime),
+    notes:    get(colMap.notes),
+  };
+}
+
+function confirmBomImport(imported, filename){
+  if(imported.length === 0){
+    alert(`No valid rows found in "${filename}".\n\nMake sure your file has a header row with columns like: Item, Category, Vendor, Qty, Unit Cost, Status.`);
+    return;
+  }
+
+  const merge = bomItems.length > 0 &&
+    confirm(`Found ${imported.length} items in "${filename}".\n\nOK = Merge with existing ${bomItems.length} items\nCancel = Replace all existing items`);
+
+  if(merge){
+    bomItems = [...bomItems, ...imported];
+  } else {
+    bomItems = imported;
+  }
+  saveBom();
+  renderBom();
+  alert(`✓ Imported ${imported.length} items${merge ? ' (merged)' : ''}.\n\nReview the table and adjust any columns that weren't detected automatically. You can edit any item by clicking the ✎ button.`);
+}
+
+// ---- EXPORT ----
+function exportBomCSV(){
+  const headers = ['Category','Item','Vendor','Qty','Unit Cost','Total Cost','Status','Lead Time','Notes'];
+  const rows = bomItems.map(i=>[
+    i.category||'', i.name||'', i.vendor||'',
+    i.qty||0,
+    i.unitCost||0,
+    (Number(i.unitCost)||0)*(Number(i.qty)||0),
+    i.status||'', i.leadTime||'', (i.notes||'').replace(/,/g,';')
+  ]);
+  const totalCost = bomItems.reduce((s,i)=>(s+(Number(i.unitCost)||0)*(Number(i.qty)||0)),0);
+  rows.push(['','','','','TOTAL',totalCost.toFixed(2),'','','']);
+  const csv = [headers, ...rows].map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  downloadFile('Bubbles_BOM.csv', 'text/csv', csv);
+}
+
+function exportBomExcel(){
+  // Build a simple HTML table that Excel can open as .xls
+  const headers = ['Category','Item','Vendor','Qty','Unit Cost ($)','Total Cost ($)','Status','Lead Time','Notes'];
+  const totalCost = bomItems.reduce((s,i)=>(s+(Number(i.unitCost)||0)*(Number(i.qty)||0)),0);
+  let table = `<table border="1"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+  for(const i of bomItems){
+    const total = (Number(i.unitCost)||0)*(Number(i.qty)||0);
+    table += `<tr><td>${i.category||''}</td><td>${i.name||''}</td><td>${i.vendor||''}</td><td>${i.qty||0}</td><td>${Number(i.unitCost||0).toFixed(2)}</td><td>${total.toFixed(2)}</td><td>${i.status||''}</td><td>${i.leadTime||''}</td><td>${i.notes||''}</td></tr>`;
+  }
+  table += `<tr><td colspan="5"><strong>TOTAL</strong></td><td><strong>${totalCost.toFixed(2)}</strong></td><td colspan="3"></td></tr>`;
+  table += '</tbody></table>';
+  const xls = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body>${table}</body></html>`;
+  downloadFile('Bubbles_BOM.xls', 'application/vnd.ms-excel', xls);
+}
+
+function downloadFile(filename, mimeType, content){
+  const blob = new Blob([content], {type: mimeType});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
 // ===== INIT =====
 function init(){
   loadTasks();
+  loadBom();
   nextId = Math.max(...tasks.map(t=>parseInt(t.id)||0), 99) + 1;
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
   populateFilters();
