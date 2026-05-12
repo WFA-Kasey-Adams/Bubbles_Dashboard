@@ -3186,13 +3186,15 @@ function renderWorkStreamView(ws) {
       <div class="progress-bar-bg" style="height:8px;"><div class="progress-bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
       <div style="font-size:10px;color:var(--text-muted);margin-top:5px;">${total} tasks in ${ws}</div>
     </div>`;
+  const wsId = encodeURIComponent(ws);
   function buildWsCards(arr) {
     return arr.map(t=>{
       const earliest = getEarliestWeek(t);
       const checkClass = t.status==='Complete'?'checked':t.status==='In Progress'?'inprogress':t.status==='Blocked'?'blocked':'';
       const checkIcon = t.status==='Complete'?'✓':t.status==='Blocked'?'!':'';
-      return `<div class="mytask-card ${t.status==='Complete'?'is-complete':''} ${t.status==='Blocked'?'is-blocked':''}" onclick="openEdit('${t.id}')">
-        <div class="mytask-check ${checkClass}" onclick="event.stopPropagation();wsQuickCycle('${t.id}','${esc(ws)}')">${checkIcon}</div>
+      const canEditWs = isAdmin || t.owner === fbConfig.user;
+      return `<div class="mytask-card ${t.status==='Complete'?'is-complete':''} ${t.status==='Blocked'?'is-blocked':''}" onclick="${canEditWs?`openEdit('${t.id}')`:''}" style="${!canEditWs?'cursor:default;':''}">
+        <div class="mytask-check ${checkClass}" onclick="event.stopPropagation();${canEditWs?`wsQuickCycle('${t.id}','${wsId}')`:''}">${checkIcon}</div>
         <div class="mytask-body">
           <div class="mytask-name ${t.status==='Complete'?'strike':''}">${t.task}</div>
           <div class="mytask-meta">
@@ -3202,12 +3204,12 @@ function renderWorkStreamView(ws) {
           </div>
           ${t.notes?`<div class="mytask-notes">${t.notes}</div>`:''}
         </div>
-        <div class="mytask-status-row" onclick="event.stopPropagation()">
-          <button class="mytask-status-btn msb-notstarted" onclick="wsSetStatus('${t.id}','Not Started','${esc(ws)}')" style="${!t.status||t.status==='Not Started'?'outline:1px solid var(--text-muted);':''}">Not Started</button>
-          <button class="mytask-status-btn msb-inprogress" onclick="wsSetStatus('${t.id}','In Progress','${esc(ws)}')" style="${t.status==='In Progress'?'outline:1px solid var(--amber);':''}">In Progress</button>
-          <button class="mytask-status-btn msb-blocked" onclick="wsSetStatus('${t.id}','Blocked','${esc(ws)}')" style="${t.status==='Blocked'?'outline:1px solid var(--red);':''}">Blocked</button>
-          <button class="mytask-status-btn msb-complete" onclick="wsSetStatus('${t.id}','Complete','${esc(ws)}')" style="${t.status==='Complete'?'outline:1px solid var(--green);':''}">✓ Done</button>
-        </div>
+        ${canEditWs ? `<div class="mytask-status-row" onclick="event.stopPropagation()">
+          <button class="mytask-status-btn msb-notstarted" onclick="wsSetStatus('${t.id}','Not Started','${wsId}')" style="${!t.status||t.status==='Not Started'?'outline:1px solid var(--text-muted);':''}">Not Started</button>
+          <button class="mytask-status-btn msb-inprogress" onclick="wsSetStatus('${t.id}','In Progress','${wsId}')" style="${t.status==='In Progress'?'outline:1px solid var(--amber);':''}">In Progress</button>
+          <button class="mytask-status-btn msb-blocked" onclick="wsSetStatus('${t.id}','Blocked','${wsId}')" style="${t.status==='Blocked'?'outline:1px solid var(--red);':''}">Blocked</button>
+          <button class="mytask-status-btn msb-complete" onclick="wsSetStatus('${t.id}','Complete','${wsId}')" style="${t.status==='Complete'?'outline:1px solid var(--green);':''}">✓ Done</button>
+        </div>` : `<span class="status-badge ${statusClass(t.status)}" style="cursor:default;flex-shrink:0;">${statusLabel(t.status)}</span>`}
       </div>`;
     }).join('');
   }
@@ -3225,18 +3227,24 @@ function renderWorkStreamView(ws) {
   });
 }
 
-function wsSetStatus(id, status, ws) {
+function wsSetStatus(id, status, wsId) {
+  const ws = decodeURIComponent(wsId);
   const t = tasks.find(t=>t.id===String(id));
   if(!t) return;
+  const prevStatus = t.status;
   t.status = status;
+  if(status === 'Complete' && prevStatus !== 'Complete') checkAndUnblockTasks(String(id));
   save(); renderWorkStreamView(ws); renderStats(); renderDashboardBreakdowns();
 }
 
-function wsQuickCycle(id, ws) {
+function wsQuickCycle(id, wsId) {
+  const ws = decodeURIComponent(wsId);
   const t = tasks.find(t=>t.id===String(id));
   if(!t) return;
   const statuses = ['Not Started','In Progress','Blocked','Complete'];
+  const prevStatus = t.status;
   t.status = statuses[(statuses.indexOf(t.status)+1)%statuses.length];
+  if(t.status === 'Complete' && prevStatus !== 'Complete') checkAndUnblockTasks(String(id));
   save(); renderWorkStreamView(ws); renderStats();
 }
 
