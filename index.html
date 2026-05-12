@@ -3961,8 +3961,7 @@ async function pushBomToGithub(silent=false){
     const getResp = await fetch(GH_API + '?t=' + Date.now(), {
       headers: {
         'Authorization': `token ${ghToken}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Cache-Control': 'no-cache'
+        'Accept': 'application/vnd.github.v3+json'
       }
     });
     if(getResp.ok){
