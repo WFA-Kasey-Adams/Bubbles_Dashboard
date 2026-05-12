@@ -958,8 +958,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
     <button class="nav-tab" onclick="showTab('team')">Team</button>
     <button class="nav-tab" onclick="showTab('workstream')">Work Streams</button>
     <button class="nav-tab" onclick="showTab('bom')">BOM</button>
-    <button class="nav-tab" onclick="showTab('ai')">AI Assistant</button>
-    <button class="nav-tab" onclick="showTab('skills')">Weekly Briefings</button>
   </div>
   <div class="topbar-date" id="topbar-date"></div>
   <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
@@ -975,9 +973,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
   <button class="mobile-menu-tab" onclick="mobileNav('team')">👥 Team</button>
   <button class="mobile-menu-tab" onclick="mobileNav('workstream')">🔀 Work Streams</button>
   <button class="mobile-menu-tab" onclick="mobileNav('bom')">📦 BOM</button>
-  <div class="mobile-menu-divider"></div>
-  <button class="mobile-menu-tab" onclick="mobileNav('ai')">🤖 AI Assistant</button>
-  <button class="mobile-menu-tab" onclick="mobileNav('skills')">📋 Weekly Briefings</button>
 </div>
 
 <!-- DASHBOARD -->
@@ -1065,61 +1060,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 <!-- TEAM -->
 <div id="tab-team" class="main">
   <div class="team-grid" id="team-grid"></div>
-</div>
-
-<!-- AI ASSISTANT -->
-<div id="tab-ai" class="main">
-  <div class="chat-layout">
-    <div class="chat-panel">
-      <div class="chat-header">
-        <h3>AI Project Assistant</h3>
-        <p>Ask about tasks, update progress, or get priorities. Knows all 180 tasks.</p>
-      </div>
-      <div class="chat-messages" id="chat-messages">
-        <div class="msg ai">
-          <div class="msg-label">REACTOR AI</div>
-          <div class="msg-bubble">Hi! I'm your Bubbles Reactor project assistant. I have full context on all 180 tasks across 12 work streams and 8 team members.
-
-I can help you:
-• Tell each person what to work on this week
-• Log progress updates and mark tasks complete
-• Run Monday briefings or Friday check-ins
-• Answer questions about project status
-
-What would you like to know?</div>
-        </div>
-      </div>
-      <div class="chat-input-row">
-        <textarea class="chat-input" id="chat-input" placeholder="Ask about tasks, progress, priorities..." rows="1"></textarea>
-        <button class="chat-send" id="chat-send" onclick="sendChat()">Send</button>
-      </div>
-    </div>
-    <div class="quick-prompts">
-      <div class="qp-title">Quick Actions</div>
-      <button class="qp-mobile-toggle" onclick="toggleQuickPrompts()">⚡ Quick Actions — tap to expand</button>
-      <div class="qp-collapsible" id="qp-collapsible">
-      <div class="qp-section">
-        <div class="qp-section-label">Monday Skills</div>
-        <button class="qp-btn" onclick="quickPrompt('Run the Monday briefing — tell each team member what they should be working on this week based on the Gantt and project priorities.')"><span class="qp-icon">🗓️</span>Full Monday Briefing</button>
-        <button class="qp-btn" onclick="quickPrompt('What should Makoto be working on this Monday?')"><span class="qp-icon">🔵</span>Makoto's priorities</button>
-        <button class="qp-btn" onclick="quickPrompt('What should Chris be working on this Monday?')"><span class="qp-icon">🟡</span>Chris's priorities</button>
-        <button class="qp-btn" onclick="quickPrompt('What should Kasey be working on this Monday?')"><span class="qp-icon">🩵</span>Kasey's priorities</button>
-        <button class="qp-btn" onclick="quickPrompt('What should Priyanka be working on this Monday?')"><span class="qp-icon">🟣</span>Priyanka's priorities</button>
-      </div>
-      <div class="qp-section">
-        <div class="qp-section-label">Friday Skills</div>
-        <button class="qp-btn" onclick="quickPrompt('Run the Friday progress check-in — ask each team member what they completed this week and what is still in progress.')"><span class="qp-icon">📋</span>Friday Check-In Script</button>
-        <button class="qp-btn" onclick="quickPrompt('Summarize this week\'s progress across all work streams. What is complete, what is in progress, what is blocked?')"><span class="qp-icon">📊</span>Weekly Status Summary</button>
-      </div>
-      <div class="qp-section">
-        <div class="qp-section-label">Update Tasks</div>
-        <button class="qp-btn" onclick="quickPrompt('Mark Condenser Make/Buy Trade Study as complete.')"><span class="qp-icon">✅</span>Log a completion</button>
-        <button class="qp-btn" onclick="quickPrompt('What tasks are blocked or at risk?')"><span class="qp-icon">🚨</span>Risks & blockers</button>
-        <button class="qp-btn" onclick="quickPrompt('Give me a full project health report — progress by person, work stream completion rates, and what needs urgent attention.')"><span class="qp-icon">🔍</span>Health report</button>
-      </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- MY TASKS -->
@@ -1546,6 +1486,10 @@ What would you like to know?</div>
         <div class="field-label">Scheduled Weeks</div>
         <div id="modal-dates" style="display:flex;flex-wrap:wrap;gap:4px;padding:6px 0;"></div>
       </div>
+      <div class="field-group">
+        <div class="field-label">Blocked By Task #s <span style="color:var(--text-muted);font-weight:400;">(comma separated — auto-unblocks when all complete)</span></div>
+        <input class="field-input" id="modal-blockers" type="text" placeholder="e.g. 99, 100" style="font-family:var(--mono);">
+      </div>
       <!-- BOM Toggle -->
       <div id="modal-bom-toggle" onclick="toggleBomFields()"
         style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:8px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);transition:all .15s;">
@@ -1651,75 +1595,6 @@ What would you like to know?</div>
   <div id="ws-view-complete-section" class="urgency-section" style="display:none">
     <div class="urgency-label urgency-done">✓ Completed</div>
     <div id="ws-view-complete"></div>
-  </div>
-</div>
-
-<!-- SKILLS -->
-<div id="tab-skills" class="main">
-  <div style="margin-bottom:20px;">
-    <div style="font-size:18px;font-weight:600;color:var(--text)">Automated Skills</div>
-    <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">Run recurring AI-powered workflows for team coordination</div>
-  </div>
-  <div class="skills-grid">
-    <div class="skill-card">
-      <div class="skill-card-header">
-        <div class="skill-icon">🗓️</div>
-        <div>
-          <div class="skill-title">Monday Briefing Skill</div>
-          <div class="skill-day">Run every Monday morning</div>
-        </div>
-      </div>
-      <div class="skill-desc">Analyzes the current Gantt chart and generates a personalized task briefing for every team member. Tells each person exactly what they should focus on this week, based on work stream priorities and current project phase.</div>
-      <button class="skill-btn skill-monday" onclick="runSkill('monday')">
-        <span id="monday-btn-text">▶ Run Monday Briefing</span>
-      </button>
-      <div class="skill-output" id="monday-output"></div>
-    </div>
-
-    <div class="skill-card">
-      <div class="skill-card-header">
-        <div class="skill-icon">📋</div>
-        <div>
-          <div class="skill-title">Friday Check-In Skill</div>
-          <div class="skill-day">Run every Friday afternoon</div>
-        </div>
-      </div>
-      <div class="skill-desc">Generates a structured progress check-in script to send to each team member. Asks targeted questions about what was completed, what's still in progress, and any blockers — ready to copy and send via Slack or email.</div>
-      <button class="skill-btn skill-friday" onclick="runSkill('friday')">
-        <span id="friday-btn-text">▶ Run Friday Check-In</span>
-      </button>
-      <div class="skill-output" id="friday-output"></div>
-    </div>
-
-    <div class="skill-card">
-      <div class="skill-card-header">
-        <div class="skill-icon">📊</div>
-        <div>
-          <div class="skill-title">Weekly Status Report</div>
-          <div class="skill-day">Generate for stakeholders</div>
-        </div>
-      </div>
-      <div class="skill-desc">Compiles a full project status report — progress by work stream, completion rates per team member, upcoming milestones, and risks. Ready to share with leadership or stakeholders.</div>
-      <button class="skill-btn skill-monday" onclick="runSkill('status')">
-        <span id="status-btn-text">▶ Generate Status Report</span>
-      </button>
-      <div class="skill-output" id="status-output"></div>
-    </div>
-
-    <div class="skill-card">
-      <div class="skill-card-header">
-        <div class="skill-icon">🚨</div>
-        <div>
-          <div class="skill-title">Risk & Blocker Scan</div>
-          <div class="skill-day">Run anytime</div>
-        </div>
-      </div>
-      <div class="skill-desc">Scans the project for blocked tasks, dependencies at risk, and work streams falling behind. Surfaces items that need immediate attention before they become critical path issues.</div>
-      <button class="skill-btn skill-friday" onclick="runSkill('risk')" style="--green:#ef4444;border-color:rgba(239,68,68,.3);color:var(--red);">
-        <span id="risk-btn-text">▶ Run Risk Scan</span>
-      </button>
-      <div class="skill-output" id="risk-output"></div>
-    </div>
   </div>
 </div>
 
@@ -2032,19 +1907,26 @@ function showTab(tab){
   document.querySelectorAll('.main').forEach(d=>d.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
-  // Highlight the matching desktop nav tab by its onclick attribute
   document.querySelectorAll('.nav-tab').forEach(b=>{
     if(b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+tab+"'")) b.classList.add('active');
   });
-  if(tab === 'mytasks') renderMyTasks();
+  if(tab === 'mytasks'){
+    fbConfig.user = localStorage.getItem('bubbles_user_name') || fbConfig.user;
+    document.getElementById('mytasks-name').textContent = fbConfig.user || '—';
+    const sub = document.querySelector('#tab-mytasks .mytasks-sub');
+    if(sub) sub.textContent = 'Sorted by urgency · Click a status button to update · changes sync instantly';
+    renderMyTasks(true);
+  }
   if(tab === 'workstream') {
     const streams = [...new Set(tasks.map(t=>t.workStream))].filter(Boolean);
     const sel = document.getElementById('ws-view-select');
-    if(!sel.innerHTML) sel.innerHTML = streams.map(s=>`<option value="${s}">${s}</option>`).join('');
+    sel.innerHTML = streams.map(s=>`<option value="${s}">${s}</option>`).join('');
     renderWorkStreamView(sel.value || streams[0]);
   }
+  if(tab === 'gantt') renderGantt();
   if(tab === 'bom') { renderBom(); pullBomFromFirebase(); }
 }
+
 
 function toggleMobileMenu(){
   const menu = document.getElementById('mobile-menu');
@@ -2299,9 +2181,19 @@ function cycleStatus(id){
   event.stopPropagation();
   const t = tasks.find(t=>t.id===String(id));
   if(!t) return;
+  // Non-admins can only edit their own tasks
+  if(!isAdmin && t.owner !== fbConfig.user){
+    showToast('You can only update your own tasks.<br><span style="font-size:11px;color:var(--text-muted);">Ask Priyanka or Makoto for admin access.</span>', 'amber');
+    return;
+  }
   const statuses = ['Not Started','In Progress','Blocked','Complete'];
   const idx = statuses.indexOf(t.status);
+  const prevStatus = t.status;
   t.status = statuses[(idx+1)%statuses.length];
+  if(t.status === 'Complete' && prevStatus !== 'Complete'){
+    const anyUnblocked = checkAndUnblockTasks(t.id);
+    if(anyUnblocked) save();
+  }
   save(); renderAll();
 }
 
@@ -2351,6 +2243,11 @@ let editingId = null;
 function openEdit(id){
   const t = tasks.find(t=>t.id===String(id));
   if(!t) return;
+  // Non-admins can only edit their own tasks
+  if(!isAdmin && t.owner !== fbConfig.user){
+    showToast(`You can view but not edit ${t.owner}'s tasks.<br><span style="font-size:11px;color:var(--text-muted);">Ask Priyanka or Makoto for admin access.</span>`, 'amber');
+    return;
+  }
   editingId = id;
   document.getElementById('modal-title-label').textContent = `Edit Task #${id}`;
   document.getElementById('modal-task').value = t.task;
@@ -2361,6 +2258,7 @@ function openEdit(id){
   document.getElementById('modal-proc-status').value = t.procStatus||'';
   document.getElementById('modal-unit-cost').value = t.unitCost||'';
   document.getElementById('modal-qty').value = t.qty||'';
+  document.getElementById('modal-blockers').value = (t.blockers||[]).join(', ');
   updateModalTotal();
   const isBom = BOM_IDS.includes(String(t.id));
   setBomToggle(isBom);
@@ -2390,6 +2288,7 @@ function openAddTask(ws=''){
   document.getElementById('modal-unit-cost').value = '';
   document.getElementById('modal-qty').value = '';
   document.getElementById('modal-total-cost').textContent = '—';
+  document.getElementById('modal-blockers').value = '';
   setBomToggle(false);
   renderNotesLog([]);
   document.getElementById('modal-delete-btn').style.display = 'none';
@@ -2421,6 +2320,8 @@ function saveModal(){
   const unitCost = parseFloat(document.getElementById('modal-unit-cost').value)||0;
   const qty = parseInt(document.getElementById('modal-qty').value)||0;
   const notesLog = getModalNotesLog();
+  const blockersRaw = document.getElementById('modal-blockers').value.trim();
+  const blockers = blockersRaw ? blockersRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
   const schedule = {};
   document.querySelectorAll('#modal-dates input[data-date]').forEach(cb=>{
     if(cb.checked) schedule[cb.dataset.date] = '1';
@@ -2428,13 +2329,19 @@ function saveModal(){
 
   if(editingId){
     const t = tasks.find(t=>t.id===String(editingId));
-    if(t){ Object.assign(t,{task:taskName,workStream:ws,owner,status,notes:'',notesLog,schedule,vendor,procStatus,unitCost,qty}); }
+    const prevStatus = t ? t.status : '';
+    if(t){ Object.assign(t,{task:taskName,workStream:ws,owner,status,notes:'',notesLog,schedule,vendor,procStatus,unitCost,qty,blockers}); }
+    // If task was just completed, check if it unblocks others
+    if(status === 'Complete' && prevStatus !== 'Complete'){
+      const anyUnblocked = checkAndUnblockTasks(String(editingId));
+      if(anyUnblocked) { /* save handles it */ }
+    }
     const idx = BOM_IDS.indexOf(String(editingId));
     if(isBomToggleOn() && idx === -1) BOM_IDS.push(String(editingId));
     if(!isBomToggleOn() && idx !== -1) BOM_IDS.splice(idx, 1);
   } else {
     const newId = genId();
-    tasks.push({id:newId,workStream:ws,task:taskName,owner,notes:'',notesLog,status,schedule,vendor,procStatus,unitCost,qty});
+    tasks.push({id:newId,workStream:ws,task:taskName,owner,notes:'',notesLog,status,schedule,vendor,procStatus,unitCost,qty,blockers});
     if(isBomToggleOn()) BOM_IDS.push(String(newId));
   }
   save(); closeModal(); renderAll(); refreshFilters();
@@ -2769,15 +2676,82 @@ let pollCountdown = 30;
 let countdownTimer = null;
 let lastRemoteHash = '';
 
-function changeUserName() {
-  const current = localStorage.getItem('bubbles_user_name') || '';
-  const name = prompt('Change your display name:', current);
-  if(name && name.trim()) {
-    const trimmed = name.trim();
-    localStorage.setItem('bubbles_user_name', trimmed);
-    fbConfig.user = trimmed;
-    document.getElementById('sync-who-name').textContent = trimmed;
+const TEAM_MEMBERS = ['Kasey','Linda','Makoto','Priyanka','Chris','Andrew','Madeleine','Alex'];
+const ADMIN_MEMBERS = ['Makoto','Priyanka'];
+const ADMIN_PASSWORD = 'wfa#admin';
+let isAdmin = false;
+
+function loadGhToken(){
+  ghToken = localStorage.getItem('bubbles_gh_token') || '';
+  if(ghToken){
+    document.getElementById('gh-token-input').value = '••••••••••••••••';
+    document.getElementById('gh-push-btn').style.display = 'inline-flex';
+    document.getElementById('gh-clear-btn').style.display = 'inline-flex';
+    document.getElementById('gh-btn').style.color = 'var(--green)';
+    document.getElementById('gh-btn').style.borderColor = 'rgba(16,185,129,.3)';
   }
+}
+
+function promptUserName(){
+  // Build name selection modal
+  const existing = localStorage.getItem('bubbles_user_name') || '';
+  let html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);" id="name-overlay">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:380px;max-width:95vw;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.5);">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;">Welcome to Bubbles Reactor</div>
+      <div style="font-size:14px;color:var(--text);margin-bottom:20px;">Select your name to continue</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        ${TEAM_MEMBERS.map(name => `
+          <button onclick="selectUserName('${name}')"
+            style="padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:var(--sans);cursor:pointer;text-align:left;transition:all .15s;display:flex;align-items:center;justify-content:space-between;"
+            onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(59,130,246,.08)'"
+            onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
+            <span>${name}</span>
+            ${ADMIN_MEMBERS.includes(name) ? '<span style="font-size:10px;color:var(--amber);font-family:var(--mono);">ADMIN</span>' : ''}
+          </button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function selectUserName(name){
+  // Check if admin member needs password
+  if(ADMIN_MEMBERS.includes(name)){
+    const adminKey = localStorage.getItem('bubbles_admin_' + name);
+    if(adminKey === 'granted'){
+      setUserName(name, true);
+    } else {
+      const pwd = prompt(`${name} has admin access.\n\nEnter admin password to unlock full permissions\n(or cancel to sign in with standard access):`);
+      if(pwd === ADMIN_PASSWORD){
+        localStorage.setItem('bubbles_admin_' + name, 'granted');
+        setUserName(name, true);
+        showToast(`✓ Admin access granted for ${name}`, 'green');
+      } else {
+        setUserName(name, false);
+      }
+    }
+  } else {
+    setUserName(name, false);
+  }
+}
+
+function setUserName(name, admin){
+  isAdmin = admin;
+  localStorage.setItem('bubbles_user_name', name);
+  fbConfig.user = name;
+  const el = document.getElementById('sync-who-name');
+  if(el) el.textContent = name + (admin ? ' ⚡' : '');
+  const overlay = document.getElementById('name-overlay');
+  if(overlay) overlay.remove();
+  // Check for pending blocker cleared notifications
+  checkBlockerNotifications(name);
+}
+
+function changeUserName(){
+  // Remove existing overlay if any
+  const existing = document.getElementById('name-overlay');
+  if(existing) existing.remove();
+  promptUserName();
 }
 
 // ── Helpers ──
@@ -3074,21 +3048,106 @@ function scheduleSave() {
   }, 4000);
 }
 
-// ===== PERSON & WORK STREAM VIEWS =====
+// ===== TOAST NOTIFICATIONS =====
+function showToast(message, color='accent', duration=4000){
+  const id = 'toast_' + Date.now();
+  const colorMap = { green:'var(--green)', amber:'var(--amber)', red:'var(--red)', accent:'var(--accent)', accent2:'var(--accent2)' };
+  const c = colorMap[color] || colorMap.accent;
+  const toast = document.createElement('div');
+  toast.id = id;
+  toast.style.cssText = `position:fixed;bottom:60px;right:20px;z-index:9999;background:var(--surface);border:1px solid ${c};border-left:4px solid ${c};border-radius:8px;padding:12px 16px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.4);font-size:13px;color:var(--text);line-height:1.5;animation:slideInToast .3s ease;`;
+  toast.innerHTML = message;
+  document.body.appendChild(toast);
+  setTimeout(()=>{
+    toast.style.animation = 'fadeOutToast .3s ease forwards';
+    setTimeout(()=>toast.remove(), 300);
+  }, duration);
+}
+
+// Add toast keyframes to page
+(function(){
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideInToast { from { transform: translateX(120%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+    @keyframes fadeOutToast { from { opacity:1; } to { opacity:0; transform:translateX(20px); } }
+  `;
+  document.head.appendChild(style);
+})();
+
+// ===== BLOCKER NOTIFICATIONS =====
+function checkBlockerNotifications(userName){
+  const pending = JSON.parse(localStorage.getItem('bubbles_blocker_notifs') || '[]');
+  const mine = pending.filter(n => n.notifyUser === userName);
+  if(!mine.length) return;
+  // Show each notification
+  mine.forEach(n => {
+    setTimeout(()=>{
+      showToast(`🔓 <strong>Blocker cleared!</strong><br>Task #${n.blockedTaskId}: "${n.blockedTaskName}"<br><span style="color:var(--text-muted);font-size:11px;">was unblocked when #${n.resolvedTaskId} was completed</span>`, 'green', 8000);
+    }, 500);
+  });
+  // Clear notifs for this user
+  const remaining = pending.filter(n => n.notifyUser !== userName);
+  localStorage.setItem('bubbles_blocker_notifs', JSON.stringify(remaining));
+}
+
+function addBlockerNotification(blockedTask, resolvedTaskId){
+  const pending = JSON.parse(localStorage.getItem('bubbles_blocker_notifs') || '[]');
+  pending.push({
+    notifyUser: blockedTask.owner,
+    blockedTaskId: blockedTask.id,
+    blockedTaskName: blockedTask.task,
+    resolvedTaskId,
+    ts: new Date().toISOString()
+  });
+  localStorage.setItem('bubbles_blocker_notifs', JSON.stringify(pending));
+}
+
+function checkAndUnblockTasks(completedTaskId){
+  // Find all tasks that had this task as a blocker
+  let anyUnblocked = false;
+  for(const t of tasks){
+    if(!t.blockers || !t.blockers.includes(String(completedTaskId))) continue;
+    // Check if ALL blockers are now complete
+    const remainingBlockers = t.blockers.filter(bid => {
+      const blocker = tasks.find(b => b.id === String(bid));
+      return blocker && blocker.status !== 'Complete';
+    });
+    if(remainingBlockers.length === 0 && t.status === 'Blocked'){
+      t.status = 'In Progress';
+      anyUnblocked = true;
+      addBlockerNotification(t, completedTaskId);
+      // Show toast if the owner is currently logged in
+      if(fbConfig.user === t.owner){
+        showToast(`🔓 <strong>Your task is unblocked!</strong><br>"${t.task}"<br><span style="color:var(--text-muted);font-size:11px;">All blockers resolved — now In Progress</span>`, 'green', 6000);
+      }
+    }
+  }
+  return anyUnblocked;
+}
+
+// ===== PERSON VIEW (read-only for others) =====
 function openPersonTasks(name) {
-  const savedName = fbConfig.user;
-  fbConfig.user = name;
   document.querySelectorAll('.main').forEach(d => d.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-mytasks').classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(b => {
     if(b.textContent.includes('My Tasks')) b.classList.add('active');
   });
-  renderMyTasks();
+  // Store the name we're viewing, then render
+  const isOwnTasks = name === fbConfig.user;
+  const savedName = fbConfig.user;
+  fbConfig.user = name;
+  renderMyTasks(isOwnTasks);
+  fbConfig.user = savedName;
   document.getElementById('mytasks-name').textContent = name;
   const sub = document.querySelector('#tab-mytasks .mytasks-sub');
-  if(sub && name !== savedName) sub.textContent = `Viewing ${name}'s tasks · sorted by urgency · click My Tasks to return to yours`;
-  fbConfig.user = savedName;
+  if(sub){
+    if(isOwnTasks){
+      sub.textContent = 'Sorted by urgency · Click a status button to update · changes sync instantly';
+    } else {
+      sub.textContent = `Viewing ${name}'s tasks — read only · click My Tasks tab to return to yours`;
+    }
+  }
 }
 
 function openWorkStream(ws) {
@@ -3183,14 +3242,13 @@ function wsQuickCycle(id, ws) {
 
 // ===== MY TASKS =====
 function showMyTasks() {
-  // Switch to My Tasks tab
   document.querySelectorAll('.main').forEach(d => d.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-mytasks').classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(b => {
     if(b.textContent.includes('My Tasks')) b.classList.add('active');
   });
-  renderMyTasks();
+  renderMyTasks(true);
 }
 
 function getUrgencyOrder(t) {
@@ -3216,7 +3274,9 @@ function getEarliestWeek(t) {
   return weeks[0] || '9/99';
 }
 
-function renderMyTasks() {
+function renderMyTasks(canEdit) {
+  // canEdit: true = interactive, false/undefined = read-only for others
+  const isOwn = canEdit !== false;
   const name = fbConfig.user || localStorage.getItem('bubbles_user_name') || '';
   document.getElementById('mytasks-name').textContent = name || '—';
 
@@ -3266,8 +3326,17 @@ function renderMyTasks() {
       const earliest = getEarliestWeek(t);
       const checkClass = t.status === 'Complete' ? 'checked' : t.status === 'In Progress' ? 'inprogress' : t.status === 'Blocked' ? 'blocked' : '';
       const checkIcon = t.status === 'Complete' ? '✓' : t.status === 'Blocked' ? '!' : '';
-      return `<div class="mytask-card ${t.status==='Complete'?'is-complete':''} ${t.status==='Blocked'?'is-blocked':''}" onclick="openEdit('${t.id}')">
-        <div class="mytask-check ${checkClass}" onclick="event.stopPropagation();quickCycleStatus('${t.id}')" title="Click to cycle status">${checkIcon}</div>
+      // Blocker info
+      const blockers = t.blockers && t.blockers.length > 0 ? t.blockers : [];
+      const activeBlockers = blockers.filter(bid => {
+        const b = tasks.find(bt => bt.id === String(bid));
+        return b && b.status !== 'Complete';
+      });
+      const blockerBadge = activeBlockers.length > 0
+        ? `<div style="font-size:10px;color:var(--red);margin-top:3px;">🔒 Blocked by: ${activeBlockers.map(bid=>{const b=tasks.find(bt=>bt.id===String(bid));return b?`#${bid} ${b.task}`:`#${bid}`;}).join(', ')}</div>`
+        : blockers.length > 0 ? `<div style="font-size:10px;color:var(--green);margin-top:3px;">🔓 All blockers resolved</div>` : '';
+      return `<div class="mytask-card ${t.status==='Complete'?'is-complete':''} ${t.status==='Blocked'?'is-blocked':''}" onclick="${isOwn||isAdmin?`openEdit('${t.id}')`:''}" style="${!isOwn&&!isAdmin?'cursor:default;':''}">
+        <div class="mytask-check ${checkClass}" onclick="event.stopPropagation();${isOwn||isAdmin?`quickCycleStatus('${t.id}')`:''}" title="${isOwn||isAdmin?'Click to cycle status':'Read only'}">${checkIcon}</div>
         <div class="mytask-body">
           <div class="mytask-name ${t.status==='Complete'?'strike':''}">${t.task}</div>
           <div class="mytask-meta">
@@ -3275,14 +3344,15 @@ function renderMyTasks() {
             ${earliest !== '9/99' ? `<span style="font-size:10px;color:var(--text-muted);font-family:var(--mono);">week of ${earliest}</span>` : ''}
             ${t.id ? `<span style="font-size:10px;color:var(--text-muted);">#${t.id}</span>` : ''}
           </div>
+          ${blockerBadge}
           ${t.notes ? `<div class="mytask-notes">${t.notes}</div>` : ''}
         </div>
-        <div class="mytask-status-row" onclick="event.stopPropagation()">
-          <button class="mytask-status-btn msb-notstarted ${t.status==='Not Started'||!t.status?'':'opacity-50'}" onclick="setMyTaskStatus('${t.id}','Not Started')" style="${t.status==='Not Started'||!t.status?'outline:1px solid var(--text-muted);':''}" >Not Started</button>
+        ${isOwn||isAdmin ? `<div class="mytask-status-row" onclick="event.stopPropagation()">
+          <button class="mytask-status-btn msb-notstarted" onclick="setMyTaskStatus('${t.id}','Not Started')" style="${t.status==='Not Started'||!t.status?'outline:1px solid var(--text-muted);':''}">Not Started</button>
           <button class="mytask-status-btn msb-inprogress" onclick="setMyTaskStatus('${t.id}','In Progress')" style="${t.status==='In Progress'?'outline:1px solid var(--amber);':''}">In Progress</button>
           <button class="mytask-status-btn msb-blocked" onclick="setMyTaskStatus('${t.id}','Blocked')" style="${t.status==='Blocked'?'outline:1px solid var(--red);':''}">Blocked</button>
           <button class="mytask-status-btn msb-complete" onclick="setMyTaskStatus('${t.id}','Complete')" style="${t.status==='Complete'?'outline:1px solid var(--green);':''}">✓ Done</button>
-        </div>
+        </div>` : `<span class="status-badge ${statusClass(t.status)}" style="cursor:default;flex-shrink:0;">${statusLabel(t.status)}</span>`}
       </div>`;
     }).join('');
   }
@@ -4036,8 +4106,6 @@ function init(){
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
   populateFilters();
   renderAll();
-  document.getElementById('chat-input').addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendChat(); } });
-
   // Re-render gantt on resize/orientation change
   let resizeTimer;
   window.addEventListener('resize', ()=>{
@@ -4048,14 +4116,21 @@ function init(){
   // Always auto-connect — URL is baked in, just need a name
   const savedName = localStorage.getItem('bubbles_user_name') || '';
   if(!savedName) {
-    // First time on this browser — ask for name once
-    const name = prompt('Welcome to the Bubbles Reactor Dashboard!\n\nEnter your name so teammates can see who made changes:', '') || 'Team';
-    localStorage.setItem('bubbles_user_name', name);
-    fbConfig.user = name;
+    // First time — show name selection dropdown
+    promptUserName();
+    fbConfig.user = '';
   } else {
     fbConfig.user = savedName;
+    // Restore admin status if applicable
+    if(ADMIN_MEMBERS.includes(savedName) && localStorage.getItem('bubbles_admin_' + savedName) === 'granted'){
+      isAdmin = true;
+      document.getElementById('sync-who-name').textContent = savedName + ' ⚡';
+    } else {
+      document.getElementById('sync-who-name').textContent = savedName;
+    }
+    // Check for blocker notifications
+    checkBlockerNotifications(savedName);
   }
-  document.getElementById('sync-who-name').textContent = fbConfig.user;
 
   setSyncState('saving', 'Connecting…', '');
   fetch(fbEndpoint()).then(r => r.ok ? r.json() : null).then(data => {
