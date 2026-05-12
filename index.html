@@ -45,7 +45,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 .topbar-date { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
 
 /* ---- LAYOUT ---- */
-.main { display: none; padding: 24px 28px; max-width: 1400px; margin: 0 auto; }
+.main { display: none; padding: 24px 28px 58px; max-width: 1400px; margin: 0 auto; }
 .main.active { display: block; }
 
 /* ---- STAT CARDS ---- */
@@ -354,8 +354,9 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 .sync-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 28px; height: 34px;
-  background: var(--surface2); border-bottom: 1px solid var(--border);
+  background: var(--surface2); border-top: 1px solid var(--border);
   font-size: 11px; font-family: var(--mono);
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
 }
 .sync-bar-left { display: flex; align-items: center; gap: 6px; }
 .sync-bar-right { display: flex; align-items: center; gap: 6px; }
@@ -874,12 +875,10 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 
   /* ---- SYNC BAR ---- */
   .sync-bar {
-    position: relative;
-    height: auto;
-    padding: 6px 12px;
-    gap: 6px;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: auto; min-height: 34px;
+    flex-wrap: nowrap; justify-content: flex-start;
+    padding: 6px 12px; gap: 6px;
   }
   .sync-bar-left {
     display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;
@@ -1912,7 +1911,7 @@ function showTab(tab){
     if(b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+tab+"'")) b.classList.add('active');
   });
   if(tab === 'mytasks'){
-    fbConfig.user = localStorage.getItem('bubbles_user_name') || fbConfig.user;
+    fbConfig.user = localStorage.getItem('bubbles_user_name_v2') || fbConfig.user;
     document.getElementById('mytasks-name').textContent = fbConfig.user || '—';
     const sub = document.querySelector('#tab-mytasks .mytasks-sub');
     if(sub) sub.textContent = 'Sorted by urgency · Click a status button to update · changes sync instantly';
@@ -2695,7 +2694,7 @@ function loadGhToken(){
 
 function promptUserName(){
   // Build name selection modal
-  const existing = localStorage.getItem('bubbles_user_name') || '';
+  const existing = localStorage.getItem('bubbles_user_name_v2') || '';
   let html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);" id="name-overlay">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:380px;max-width:95vw;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.5);">
       <div style="font-family:var(--mono);font-size:12px;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;">Welcome to Bubbles Reactor</div>
@@ -2718,13 +2717,13 @@ function promptUserName(){
 function selectUserName(name){
   // Check if admin member needs password
   if(ADMIN_MEMBERS.includes(name)){
-    const adminKey = localStorage.getItem('bubbles_admin_' + name);
+    const adminKey = localStorage.getItem('bubbles_admin_v2_' + name);
     if(adminKey === 'granted'){
       setUserName(name, true);
     } else {
       const pwd = prompt(`${name} has admin access.\n\nEnter admin password to unlock full permissions\n(or cancel to sign in with standard access):`);
       if(pwd === ADMIN_PASSWORD){
-        localStorage.setItem('bubbles_admin_' + name, 'granted');
+        localStorage.setItem('bubbles_admin_v2_' + name, 'granted');
         setUserName(name, true);
         showToast(`✓ Admin access granted for ${name}`, 'green');
       } else {
@@ -2738,7 +2737,7 @@ function selectUserName(name){
 
 function setUserName(name, admin){
   isAdmin = admin;
-  localStorage.setItem('bubbles_user_name', name);
+  localStorage.setItem('bubbles_user_name_v2', name);
   fbConfig.user = name;
   const el = document.getElementById('sync-who-name');
   if(el) el.textContent = name + (admin ? ' ⚡' : '');
@@ -3286,7 +3285,7 @@ function getEarliestWeek(t) {
 function renderMyTasks(canEdit) {
   // canEdit: true = interactive, false/undefined = read-only for others
   const isOwn = canEdit !== false;
-  const name = fbConfig.user || localStorage.getItem('bubbles_user_name') || '';
+  const name = fbConfig.user || localStorage.getItem('bubbles_user_name_v2') || '';
   document.getElementById('mytasks-name').textContent = name || '—';
 
   // Match by name — case insensitive partial match for flexibility
@@ -4123,7 +4122,7 @@ function init(){
   });
 
   // Always auto-connect — URL is baked in, just need a name
-  const savedName = localStorage.getItem('bubbles_user_name') || '';
+  const savedName = localStorage.getItem('bubbles_user_name_v2') || '';
   if(!savedName) {
     // First time — show name selection dropdown
     promptUserName();
@@ -4131,7 +4130,7 @@ function init(){
   } else {
     fbConfig.user = savedName;
     // Restore admin status if applicable
-    if(ADMIN_MEMBERS.includes(savedName) && localStorage.getItem('bubbles_admin_' + savedName) === 'granted'){
+    if(ADMIN_MEMBERS.includes(savedName) && localStorage.getItem('bubbles_admin_v2_' + savedName) === 'granted'){
       isAdmin = true;
       document.getElementById('sync-who-name').textContent = savedName + ' ⚡';
     } else {
