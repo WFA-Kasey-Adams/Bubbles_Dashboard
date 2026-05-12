@@ -1215,7 +1215,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
             <option value="Kasey">Kasey</option>
             <option value="Andrew">Andrew</option>
             <option value="Linda">Linda</option>
-            <option value="Madeleine">Madeleine</option>
+            <option value="Maddie">Maddie</option>
             <option value="Alex">Alex</option>
             <option value="Unassigned">Unassigned</option>
           </select>
@@ -1300,7 +1300,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
     <button class="sync-btn" onclick="pushToFirebase()">↑ Push</button>
     <button class="sync-btn sync-btn-pull" onclick="pullFromFirebase()" style="background:var(--surface2);color:var(--accent2);border:1px solid var(--border);">↓ Pull</button>
     <button class="sync-btn" onclick="changeUserName()" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);">✎ Name</button>
-    <button class="sync-btn" onclick="toggleGhPanel()" id="gh-btn" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);" title="GitHub BOM sync">⑂ GitHub</button>
+    <button class="sync-btn" onclick="toggleGhPanel()" id="gh-btn" style="background:var(--surface2);color:var(--text-muted);border:1px solid var(--border);display:none;" title="GitHub BOM sync">⑂ GitHub</button>
   </div>
 </div>
 
@@ -1465,7 +1465,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
             <option value="Kasey">Kasey</option>
             <option value="Andrew">Andrew</option>
             <option value="Linda">Linda</option>
-            <option value="Madeleine">Madeleine</option>
+            <option value="Maddie">Maddie</option>
             <option value="Alex">Alex</option>
             <option value="Unassigned">Unassigned</option>
           </select>
@@ -1687,10 +1687,10 @@ const GANTT_DATA = [
   {id:"65",workStream:"Prototype/Build",task:"Scaled Version for DFMA Assessment",owner:"Andrew",notes:"",status:"Not Started",schedule:{"4/27":"1","5/4":"1"}},
   {id:"66",workStream:"Prototype/Build",task:"HX Holding Study — Each Panel",owner:"Andrew",notes:"",status:"Not Started",schedule:{"4/27":"1","5/4":"1"}},
   {id:"67",workStream:"Prototype/Build",task:"Validate HX Structure is Self-Supporting",owner:"Andrew",notes:"",status:"Not Started",schedule:{"5/4":"1","5/11":"1"}},
-  {id:"68",workStream:"Prototype/Build",task:"Mesh Secured to HX Correctly",owner:"Madeleine",notes:"",status:"Not Started",schedule:{"5/11":"1","5/18":"1"}},
-  {id:"69",workStream:"Prototype/Build",task:"SiGel Fill & Removal Procedures Validated",owner:"Madeleine",notes:"",status:"Not Started",schedule:{"5/18":"1","5/25":"1"}},
-  {id:"70",workStream:"Prototype/Build",task:"Iterate & Refine SiGel Fill/Drain",owner:"Madeleine",notes:"",status:"Not Started",schedule:{"5/25":"1","6/1":"1"}},
-  {id:"71",workStream:"Prototype/Build",task:"Air Filter Replacement Procedure Documented",owner:"Madeleine",notes:"",status:"Not Started",schedule:{"5/25":"1"}},
+  {id:"68",workStream:"Prototype/Build",task:"Mesh Secured to HX Correctly",owner:"Maddie",notes:"",status:"Not Started",schedule:{"5/11":"1","5/18":"1"}},
+  {id:"69",workStream:"Prototype/Build",task:"SiGel Fill & Removal Procedures Validated",owner:"Maddie",notes:"",status:"Not Started",schedule:{"5/18":"1","5/25":"1"}},
+  {id:"70",workStream:"Prototype/Build",task:"Iterate & Refine SiGel Fill/Drain",owner:"Maddie",notes:"",status:"Not Started",schedule:{"5/25":"1","6/1":"1"}},
+  {id:"71",workStream:"Prototype/Build",task:"Air Filter Replacement Procedure Documented",owner:"Maddie",notes:"",status:"Not Started",schedule:{"5/25":"1"}},
   {id:"72",workStream:"Prototype/Build",task:"Assembly Sequence Determined",owner:"Andrew",notes:"",status:"Not Started",schedule:{"5/4":"1","5/11":"1"}},
   {id:"73",workStream:"Prototype/Build",task:"Assemble 1/8th Module",owner:"Andrew",notes:"HarnessTech? + Electrical Engineer",status:"Not Started",schedule:{"5/18":"1","5/25":"1","6/1":"1"}},
 
@@ -1734,8 +1734,8 @@ const GANTT_DATA = [
   {id:"104",workStream:"Sim",task:"Mono→Multi-Channel Pressure & Thermal Curve",owner:"Kasey",notes:"Start mono-channel, increment channels, graph pressure + thermal distribution",status:"In Progress",schedule:{"4/6":"1","4/13":"1"}},
   {id:"105",workStream:"Sim",task:"Ray60 Flow Modulation Test",owner:"Kasey",notes:"Determine how much flow can be reduced; feeds pump/heater sizing decision",status:"Not Started",schedule:{"4/6":"1","4/13":"1"}},
   {id:"106",workStream:"Instrumentation",task:"Pare Down Sensor List for Cost",owner:"Kasey",notes:"Triage must-have vs. nice-to-have with Linda before Apr 17 review",status:"Not Started",schedule:{"4/6":"1","4/13":"1"}},
-  {id:"107",workStream:"Prototype/Build",task:"Bead Durability Cycle Test",owner:"Madeleine",notes:"Sodium alginate beads chalky/dusty post-crystallization; assess cycle degradation",status:"In Progress",schedule:{"4/6":"1","4/13":"1","4/20":"1"}},
-  {id:"108",workStream:"Prototype/Build",task:"Evaluate Alumina vs. Zeolite as Salt Host",owner:"Madeleine",notes:"Alumina flagged as potentially stronger host; sodium alginate structural change from HMC",status:"Not Started",schedule:{"4/13":"1","4/20":"1"}},
+  {id:"107",workStream:"Prototype/Build",task:"Bead Durability Cycle Test",owner:"Maddie",notes:"Sodium alginate beads chalky/dusty post-crystallization; assess cycle degradation",status:"In Progress",schedule:{"4/6":"1","4/13":"1","4/20":"1"}},
+  {id:"108",workStream:"Prototype/Build",task:"Evaluate Alumina vs. Zeolite as Salt Host",owner:"Maddie",notes:"Alumina flagged as potentially stronger host; sodium alginate structural change from HMC",status:"Not Started",schedule:{"4/13":"1","4/20":"1"}},
 
   // ── APR 13 STANDUP ──
   {id:"109",workStream:"Controls",task:"Electrical Voltage Decision: 460V vs 208V/230V",owner:"Makoto",notes:"BLOCKED: Need Altadena panel capacity from Andrew + Niagara site power confirmed. 460V preferred (deployment-rep, ~37.6A vs ~83A at 208V for 30kW). Decision required before electrical design proceeds.",status:"Complete",schedule:{"4/13":"1","4/20":"1"}},
@@ -1744,8 +1744,8 @@ const GANTT_DATA = [
   {id:"112",workStream:"Prototype/Build",task:"Gas vs. Electric Heater Decision",owner:"Andrew",notes:"Andrew to lead. Electric resistance heating (~30kW) currently selected for prototype for PLC controllability + simpler permitting. Confirm or revisit.",status:"Complete",schedule:{"4/13":"1","4/20":"1"}},
   {id:"113",workStream:"Detailed Design",task:"Plumbing Design Update & Hopper Draining",owner:"Chris",notes:"Apr 13: Chris focused on plumbing and updating hopper draining design.",status:"In Progress",schedule:{"4/13":"1","4/20":"1"}},
   {id:"114",workStream:"Performance Validation",task:"Environmental Chamber Test Setup",owner:"Alex",notes:"Apr 13: Alex finishing humidity chamber test setup.",status:"In Progress",schedule:{"4/13":"1","4/20":"1"}},
-  {id:"115",workStream:"Prototype/Build",task:"Materials Resilience Through Cycles — Decision Gate",owner:"Madeleine",notes:"Next decision gate: assess materials resilience through adsorption/desorption cycles. Gate for proceeding with chosen host material.",status:"In Progress",schedule:{"4/20":"1","4/27":"1"}},
-  {id:"116",workStream:"Prototype/Build",task:"Test AlPO and SAPO as Desiccant Candidates",owner:"Madeleine",notes:"Apr 13 materials decision gate: test AlPO and SAPO alongside sodium alginate / alumina candidates.",status:"Not Started",schedule:{"4/20":"1","4/27":"1"}},
+  {id:"115",workStream:"Prototype/Build",task:"Materials Resilience Through Cycles — Decision Gate",owner:"Maddie",notes:"Next decision gate: assess materials resilience through adsorption/desorption cycles. Gate for proceeding with chosen host material.",status:"In Progress",schedule:{"4/20":"1","4/27":"1"}},
+  {id:"116",workStream:"Prototype/Build",task:"Test AlPO and SAPO as Desiccant Candidates",owner:"Maddie",notes:"Apr 13 materials decision gate: test AlPO and SAPO alongside sodium alginate / alumina candidates.",status:"Not Started",schedule:{"4/20":"1","4/27":"1"}},
   {id:"117",workStream:"Prototype/Build",task:"Procure 20 Gallons Distilled Water",owner:"Priyanka",notes:"For lab use / materials testing.",status:"Not Started",schedule:{"4/13":"1"}},
   {id:"118",workStream:"Instrumentation",task:"Minimum Viable Sensor List — Finalized",owner:"Kasey",notes:"COMPLETE: Pared down to minimum viable sensor list Apr 13.",status:"Complete",schedule:{"4/13":"1"}},
   {id:"119",workStream:"Controls",task:"Beckhoff PLC Scoping Meeting",owner:"Kasey",notes:"Scheduled with Beckhoff to identify PLC needs + I/O module count.",status:"In Progress",schedule:{"4/13":"1","4/20":"1"}},
@@ -1861,7 +1861,7 @@ const GANTT_DATA = [
 const DATE_COLS = ["3/23","3/30","4/6","4/13","4/20","4/27","5/4","5/11","5/18","5/25","6/1","6/8","6/15","6/22","6/29","7/6","7/13"];
 const MONTHS = [{label:"March 2026",cols:["3/23","3/30"]},{label:"April 2026",cols:["4/6","4/13","4/20","4/27"]},{label:"May 2026",cols:["5/4","5/11","5/18","5/25"]},{label:"June 2026",cols:["6/1","6/8","6/15","6/22","6/29"]},{label:"July 2026",cols:["7/6","7/13"]}];
 
-const OWNER_COLORS = {Makoto:"o-makoto",Priyanka:"o-priyanka",Chris:"o-chris",Kasey:"o-kasey",Andrew:"o-andrew",Linda:"o-linda",Madeleine:"o-madeleine",Alex:"o-alex",Unassigned:"o-unassigned"};
+const OWNER_COLORS = {Makoto:"o-makoto",Priyanka:"o-priyanka",Chris:"o-chris",Kasey:"o-kasey",Andrew:"o-andrew",Linda:"o-linda",Maddie:"o-madeleine",Alex:"o-alex",Unassigned:"o-unassigned"};
 const WS_COLORS = {"Define Requirements":"ws-define","Process Flow Diagram":"ws-pfd","Detailed Design":"ws-cad","Sim":"ws-sim","Instrumentation":"ws-inst","Condenser":"ws-cond","BOM & Costing":"ws-bom","LL Orders":"ws-ll","Safety":"ws-safety","Prototype/Build":"ws-proto","Performance Validation":"ws-perf","Controls":"ws-ctrl"};
 
 // mutable state stored in localStorage
@@ -2472,7 +2472,7 @@ PROJECT SNAPSHOT:
 - Not Started: ${tasks.filter(t=>t.status==='Not Started'||!t.status).length}
 - Blocked: ${tasks.filter(t=>t.status==='Blocked').length}
 
-TEAM MEMBERS: Makoto (Systems Engineering Lead), Priyanka (Project Manager/Systems), Chris (Mechanical/CAD), Kasey (Simulation/Test), Andrew (Hardware/Procurement), Linda (BOM & Procurement), Madeleine (Prototype Build), Alex (Test Engineer)
+TEAM MEMBERS: Makoto (Systems Engineering Lead), Priyanka (Project Manager/Systems), Chris (Mechanical/CAD), Kasey (Simulation/Test), Andrew (Hardware/Procurement), Linda (BOM & Procurement), Maddie (Prototype Build), Alex (Test Engineer)
 
 ALL TASKS:
 ${taskSummary}
@@ -2676,7 +2676,7 @@ let pollCountdown = 30;
 let countdownTimer = null;
 let lastRemoteHash = '';
 
-const TEAM_MEMBERS = ['Kasey','Linda','Makoto','Priyanka','Chris','Andrew','Madeleine','Alex'];
+const TEAM_MEMBERS = ['Kasey','Linda','Makoto','Priyanka','Chris','Andrew','Maddie','Alex'];
 const ADMIN_MEMBERS = ['Makoto','Priyanka'];
 const ADMIN_PASSWORD = 'wfa#admin';
 let isAdmin = false;
@@ -2741,9 +2741,10 @@ function setUserName(name, admin){
   fbConfig.user = name;
   const el = document.getElementById('sync-who-name');
   if(el) el.textContent = name + (admin ? ' ⚡' : '');
+  const ghBtn = document.getElementById('gh-btn');
+  if(ghBtn) ghBtn.style.display = name === 'Kasey' ? 'inline-block' : 'none';
   const overlay = document.getElementById('name-overlay');
   if(overlay) overlay.remove();
-  // Check for pending blocker cleared notifications
   checkBlockerNotifications(name);
 }
 
@@ -4136,7 +4137,8 @@ function init(){
     } else {
       document.getElementById('sync-who-name').textContent = savedName;
     }
-    // Check for blocker notifications
+    const ghBtn = document.getElementById('gh-btn');
+    if(ghBtn) ghBtn.style.display = savedName === 'Kasey' ? 'inline-block' : 'none';
     checkBlockerNotifications(savedName);
   }
 
