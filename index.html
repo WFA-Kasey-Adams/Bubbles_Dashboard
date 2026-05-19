@@ -1162,7 +1162,6 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
           <option value="">All Categories</option>
         </select>
       </div>
-      <button class="toolbar-btn" onclick="resetBomToSeed()" style="color:var(--amber);border-color:rgba(245,158,11,.3);">↺ Reset to seed data</button>
       <button class="toolbar-btn" onclick="openAddBomItem()" id="bom-add-btn" style="color:var(--green);border-color:rgba(16,185,129,.3);display:none;"><span class="icon">＋</span> Add component</button>
     </div>
     <div style="overflow-x:auto;">
@@ -3735,6 +3734,7 @@ function renderBom(){
         const qNone = Math.max(0, qty - qq - qo - qs - qr);
         const spent = (qo + qs + qr) * cost;
 
+        const canAdvance = canEditBom() || fbConfig.user === item.owner;
         // Pipeline segments
         let pipeline = '<div class="pipeline-bar">';
         if(qNone > 0) pipeline += `<span class="pipeline-seg seg-none">${qNone} not ordered</span>`;
@@ -3742,6 +3742,15 @@ function renderBom(){
         if(qo > 0) pipeline += `<span class="pipeline-seg seg-ordered" onclick="event.stopPropagation();advancePipeline('${item.id}','ordered')" title="Click to advance to Shipped">${qo} ordered</span>`;
         if(qs > 0) pipeline += `<span class="pipeline-seg seg-shipped" onclick="event.stopPropagation();advancePipeline('${item.id}','shipped')" title="Click to advance to Received">${qs} shipped</span>`;
         if(qr > 0) pipeline += `<span class="pipeline-seg seg-received" style="cursor:default">${qr} received</span>`;
+        if(!canAdvance && (qq > 0 || qo > 0 || qs > 0)){
+          // Replace clickable segments with non-clickable for non-owners
+          pipeline = '<div class="pipeline-bar">';
+          if(qNone > 0) pipeline += `<span class="pipeline-seg seg-none">${qNone} not ordered</span>`;
+          if(qq > 0) pipeline += `<span class="pipeline-seg seg-quoted" style="cursor:default">${qq} quoted</span>`;
+          if(qo > 0) pipeline += `<span class="pipeline-seg seg-ordered" style="cursor:default">${qo} ordered</span>`;
+          if(qs > 0) pipeline += `<span class="pipeline-seg seg-shipped" style="cursor:default">${qs} shipped</span>`;
+          if(qr > 0) pipeline += `<span class="pipeline-seg seg-received" style="cursor:default">${qr} received</span>`;
+        }
         if(qty === 0) pipeline += `<span class="pipeline-seg seg-none">—</span>`;
         pipeline += '</div>';
 
@@ -3801,7 +3810,7 @@ function advancePipeline(id, fromStage){
   const item = bomItems.find(i=>String(i.id)===String(id));
   if(!item) return;
   if(!canEditBom() && fbConfig.user !== item.owner){
-    showToast('Only Linda, Makoto, and Priyanka can update procurement status.', 'amber');
+    showToast(`Only Linda, Makoto, Priyanka, or ${item.owner} can update this item's status.`, 'amber');
     return;
   }
   const toStage = PIPELINE_NEXT[fromStage];
