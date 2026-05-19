@@ -737,6 +737,33 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 
 /* Small phones */
 
+/* BOM pipeline */
+.pipeline-bar { display:flex; align-items:center; gap:3px; flex-wrap:wrap; }
+.pipeline-seg {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 7px; border-radius:20px; font-size:10px; font-weight:600;
+  cursor:pointer; transition:all .15s; white-space:nowrap;
+  font-family:var(--mono);
+}
+.pipeline-seg:hover { filter:brightness(1.2); transform:scale(1.05); }
+.pipeline-seg.seg-none { background:rgba(100,116,139,.12); color:var(--text-muted); border:1px solid rgba(100,116,139,.2); cursor:default; }
+.pipeline-seg.seg-quoted { background:rgba(168,85,247,.15); color:#d8b4fe; border:1px solid rgba(168,85,247,.3); }
+.pipeline-seg.seg-ordered { background:rgba(59,130,246,.15); color:#93c5fd; border:1px solid rgba(59,130,246,.3); }
+.pipeline-seg.seg-shipped { background:rgba(245,158,11,.15); color:var(--amber); border:1px solid rgba(245,158,11,.3); }
+.pipeline-seg.seg-received { background:rgba(16,185,129,.15); color:#6ee7b7; border:1px solid rgba(16,185,129,.3); }
+
+/* Pipeline advance modal */
+.pipeline-popup {
+  position:fixed; z-index:600; background:var(--surface);
+  border:1px solid var(--border); border-radius:12px;
+  padding:20px; width:280px; box-shadow:0 16px 48px rgba(0,0,0,.5);
+}
+.pipeline-popup h4 { font-family:var(--mono); font-size:11px; color:var(--accent2); text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px; }
+.pipeline-popup .pp-desc { font-size:13px; color:var(--text); margin-bottom:16px; line-height:1.5; }
+.pipeline-popup .pp-input { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.pipeline-popup .pp-input input { flex:1; background:var(--surface2); border:1px solid var(--accent); border-radius:8px; color:var(--text); font-family:var(--mono); font-size:18px; padding:8px 12px; outline:none; text-align:center; }
+.pipeline-popup .pp-btns { display:flex; gap:8px; }
+
 /* BOM collapsible categories */
 .bom-cat-header { cursor: pointer; user-select: none; }
 .bom-cat-header:hover td { background: rgba(6,182,212,.12) !important; }
@@ -1135,7 +1162,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
           <option value="">All Categories</option>
         </select>
       </div>
-      <button class="toolbar-btn" onclick="openAddBomItem()" style="color:var(--green);border-color:rgba(16,185,129,.3);"><span class="icon">＋</span> Add component</button>
+      <button class="toolbar-btn" onclick="openAddBomItem()" id="bom-add-btn" style="color:var(--green);border-color:rgba(16,185,129,.3);display:none;"><span class="icon">＋</span> Add component</button>
     </div>
     <div style="overflow-x:auto;">
       <table class="gantt-table" id="bom-table" style="min-width:1000px;">
@@ -1143,13 +1170,13 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
           <tr>
             <th style="width:44px">#</th>
             <th>Component</th>
-            <th style="width:90px">Owner</th>
-            <th style="width:120px">Vendor</th>
-            <th style="width:110px">Proc. Status</th>
-            <th style="width:70px;text-align:center">Lead (BD)</th>
-            <th style="width:95px;text-align:right">Unit Cost</th>
-            <th style="width:55px;text-align:center">Qty</th>
-            <th style="width:95px;text-align:right">Total</th>
+            <th style="width:80px">Owner</th>
+            <th style="width:110px">Vendor</th>
+            <th style="width:60px;text-align:center">Lead</th>
+            <th style="min-width:200px">Procurement Pipeline</th>
+            <th style="width:90px;text-align:right">Unit Cost</th>
+            <th style="width:95px;text-align:right">Projected</th>
+            <th style="width:95px;text-align:right">Spent</th>
             <th style="width:28px"></th>
           </tr>
         </thead>
@@ -1157,6 +1184,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
         <tfoot>
           <tr>
             <td colspan="7" style="text-align:right;font-size:11px;color:var(--text-muted);padding:10px 12px;background:var(--surface2);border-top:1px solid var(--border);">Grand total</td>
+            <td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--text-dim);font-weight:600;padding:10px 12px;background:var(--surface2);border-top:1px solid var(--border);" id="bom-projected-total">$—</td>
             <td style="text-align:right;font-family:var(--mono);font-size:13px;color:var(--green);font-weight:700;padding:10px 12px;background:var(--surface2);border-top:1px solid var(--border);" id="bom-grand-total">$—</td>
             <td style="background:var(--surface2);border-top:1px solid var(--border);"></td>
           </tr>
@@ -1237,18 +1265,31 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
           <input class="field-input" id="bom-modal-partnum" type="text" placeholder="e.g. HC2A-S(H)" style="font-family:var(--mono);font-size:12px;">
         </div>
         <div class="field-group">
-          <div class="field-label">Proc. Status</div>
-          <select class="field-select" id="bom-modal-status">
-            <option value="Not ordered">Not ordered</option>
-            <option value="Quoted">Quoted</option>
-            <option value="In progress">In progress</option>
-            <option value="Ordered">Ordered</option>
-            <option value="Partial">Partial</option>
-            <option value="Received">Received</option>
-            <option value="On hold">On hold</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
+          <div class="field-label">Total Qty</div>
+          <input class="field-input" id="bom-modal-qty" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
         </div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:8px;padding:14px;background:var(--surface2);">
+        <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent2);margin-bottom:10px;">Procurement Pipeline <span style="color:var(--text-muted);font-weight:400;">(qty at each stage)</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+          <div class="field-group">
+            <div class="field-label" style="color:#d8b4fe;">Quoted</div>
+            <input class="field-input" id="bom-modal-qty-quoted" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
+          </div>
+          <div class="field-group">
+            <div class="field-label" style="color:#93c5fd;">Ordered</div>
+            <input class="field-input" id="bom-modal-qty-ordered" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
+          </div>
+          <div class="field-group">
+            <div class="field-label" style="color:var(--amber);">Shipped</div>
+            <input class="field-input" id="bom-modal-qty-shipped" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
+          </div>
+          <div class="field-group">
+            <div class="field-label" style="color:#6ee7b7;">Received</div>
+            <input class="field-input" id="bom-modal-qty-received" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
+          </div>
+        </div>
+        <div id="bom-modal-qty-warning" style="font-size:11px;color:var(--red);margin-top:8px;display:none;">⚠ Pipeline qty exceeds total qty</div>
       </div>
       <div class="field-row">
         <div class="field-group">
@@ -1256,18 +1297,18 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
           <input class="field-input" id="bom-modal-unitcost" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateBomModalTotal()">
         </div>
         <div class="field-group">
-          <div class="field-label">Qty</div>
-          <input class="field-input" id="bom-modal-qty" type="number" min="1" step="1" placeholder="1" oninput="updateBomModalTotal()">
+          <div class="field-label">Lead Time (BD)</div>
+          <input class="field-input" id="bom-modal-leadtime" type="text" placeholder="e.g. 20">
         </div>
       </div>
       <div class="field-row">
         <div class="field-group">
-          <div class="field-label">Total Cost</div>
-          <div class="field-input" id="bom-modal-total" style="background:var(--surface2);color:var(--green);font-family:var(--mono);display:flex;align-items:center;font-weight:600;">—</div>
+          <div class="field-label">Projected Cost</div>
+          <div class="field-input" id="bom-modal-total" style="background:var(--surface2);color:var(--text-dim);font-family:var(--mono);display:flex;align-items:center;">—</div>
         </div>
         <div class="field-group">
-          <div class="field-label">Lead Time (BD)</div>
-          <input class="field-input" id="bom-modal-leadtime" type="text" placeholder="e.g. 20">
+          <div class="field-label">Amount Spent</div>
+          <div class="field-input" id="bom-modal-spent" style="background:var(--surface2);color:var(--green);font-family:var(--mono);font-weight:600;display:flex;align-items:center;">—</div>
         </div>
       </div>
       <div class="field-group">
@@ -3442,102 +3483,7 @@ function quickCycleStatus(id) {
   renderStats();
 }
 
-const BOM_SEED_DATA = [
-  {id:1,task:"Microchannel Heat Exchanger",category:"Heat Exchangers",owner:"Makoto",vendor:"Hylita",manufacturer:"Hylita",partNumber:"--",description:"1500x1700 Finless Microchannel HX with Brazed Perf Sheet Filter with Gap",qty:6,unitCost:1120,leadTime:"20",procStatus:"Ordered",notes:"Ordered Apr 16 2026.",notesLog:[{text:"Ordered Apr 16 2026. Est 20 BD lead time.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:2,task:"Heater",category:"Heating",owner:"Andrew",vendor:"IMS",manufacturer:"IMS",partNumber:"RQT-3650",description:"36kW Hot Water Heater with Circulator up to 95C",qty:1,unitCost:6830,leadTime:"30",procStatus:"Ordered",notes:"Est 6 weeks.",notesLog:[{text:"Ordered Apr 16 2026. Est 6 weeks.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:3,task:"Heater Modbus TCP Module",category:"Heating",owner:"Andrew",vendor:"IMS",manufacturer:"IMS",partNumber:"--",description:"Communications - Modbus TCP via Ethernet for RQT Advanced Controller",qty:1,unitCost:340,leadTime:"30",procStatus:"Ordered",notes:"Est 6 weeks.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:4,task:"Hot Water Storage",category:"Heating",owner:"Andrew",vendor:"Lochinvar (AF Supply)",manufacturer:"Lochinvar",partNumber:"",description:"Hot Water Storage up to 95C",qty:1,unitCost:2742,leadTime:"6",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
-  {id:5,task:"Hot Water Control Valves",category:"Heating",owner:"Andrew",vendor:"Assured Automation",manufacturer:"Assured Automation",partNumber:"",description:"Stainless Steel Electric One Way Valves",qty:1,unitCost:95,leadTime:"6",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
-  {id:6,task:"Adsorb Blower",category:"Dampers & Fans",owner:"Chris",vendor:"EBMpapst",manufacturer:"EBMpapst",partNumber:"",description:"Adsorb fan blower",qty:1,unitCost:721.2,leadTime:"",procStatus:"Not ordered",notes:"Pending spec confirmation from Kasey sim results.",notesLog:[]},
-  {id:7,task:"Sweep Blower",category:"Dampers & Fans",owner:"Makoto",vendor:"EBMpapst",manufacturer:"EBMpapst",partNumber:"",description:"Sweep fan blower",qty:2,unitCost:103.5,leadTime:"",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
-  {id:8,task:"Condenser Cooling Water Pump",category:"Condenser",owner:"Makoto",vendor:"AMT (PumpingSolutions)",manufacturer:"AMT",partNumber:"AMT 368C-95",description:"1.5HP Condenser Cooling Water Circulating Pump",qty:1,unitCost:698,leadTime:"",procStatus:"Not ordered",notes:"",notesLog:[]},
-  {id:9,task:"Condenser Cooling Water Pump VFD",category:"Condenser",owner:"Makoto",vendor:"WEG (PumpingSolutions)",manufacturer:"WEG",partNumber:"CFW500A01P0T4NB20G2",description:"VFD for condenser cooling water pump",qty:1,unitCost:582,leadTime:"",procStatus:"Not ordered",notes:"",notesLog:[]},
-  {id:10,task:"Dry Cooler",category:"Condenser",owner:"Chris",vendor:"Hylita",manufacturer:"Hylita",partNumber:"",description:"Condenser Cooling Water Air Cooler",qty:1,unitCost:800,leadTime:"",procStatus:"Quoted",notes:"",notesLog:[]},
-  {id:11,task:"Condenser",category:"Condenser",owner:"Makoto",vendor:"Hylita",manufacturer:"Hylita",partNumber:"",description:"Condenser for water recovery loop",qty:1,unitCost:300,leadTime:"",procStatus:"Not ordered",notes:"Pending Makoto condenser selection.",notesLog:[]},
-  {id:12,task:"Air Preheat HX",category:"Air Preheat",owner:"Makoto",vendor:"Hylita",manufacturer:"Hylita",partNumber:"",description:"Air preheat heat exchanger",qty:1,unitCost:0,leadTime:"",procStatus:"Not ordered",notes:"Passive vs active decision pending.",notesLog:[]},
-  {id:13,task:"Sweep Damper",category:"Dampers & Fans",owner:"Makoto",vendor:"Greenheck (NSWC)",manufacturer:"Greenheck",partNumber:"VCD-33",description:"VCD-33 18X10 W/ACT - Greenheck Dampers",qty:4,unitCost:539.9,leadTime:"",procStatus:"Ordered",notes:"10 Day build + 3 day shipping.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:14,task:"Adsorb Damper",category:"Dampers & Fans",owner:"Chris",vendor:"Greenheck (NSWC)",manufacturer:"Greenheck",partNumber:"",description:"65x30 Rectangular Adsorption Damper",qty:4,unitCost:771,leadTime:"",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
-  {id:15,task:"Trailer",category:"Trailer & Platform",owner:"Andrew",vendor:"Big Tex",manufacturer:"Big Tex",partNumber:"",description:"14-16ft Trailer for transport and build/test space",qty:1,unitCost:10000,leadTime:"",procStatus:"Not ordered",notes:"",notesLog:[]},
-  {id:16,task:"230V to 460V Transformer",category:"Trailer & Platform",owner:"Andrew",vendor:"Maddox",manufacturer:"Maddox",partNumber:"",description:"230V to 460V step-up transformer",qty:1,unitCost:4695,leadTime:"6",procStatus:"Not ordered",notes:"",notesLog:[]},
-  {id:17,task:"Inlet RH Sensor",category:"Sensors",owner:"Kasey",vendor:"Rotronic (Dwyer/Omega)",manufacturer:"Rotronic",partNumber:"HC2A-S(H)",description:"Humidity and temperature sensor at inlet",qty:1,unitCost:646,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground - Expected May 12th.",notesLog:[{text:"Ordered Apr 16 2026. Expected May 12th.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:18,task:"Outlet RH Sensor",category:"Sensors",owner:"Kasey",vendor:"Rotronic (Dwyer/Omega)",manufacturer:"Rotronic",partNumber:"HC2A-S(H)",description:"Humidity and temperature sensor at outlet",qty:1,unitCost:646,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground - Expected May 12th.",notesLog:[{text:"Ordered Apr 16 2026. Expected May 12th.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:19,task:"Condenser Flow Rate",category:"Sensors",owner:"Kasey",vendor:"McMaster",manufacturer:"Hedland (McMaster)",partNumber:"H617-010-R",description:"Flow meter for condenser loop",qty:1,unitCost:520.8,leadTime:"1",procStatus:"Received",notes:"Delivered May 5th.",notesLog:[{text:"Delivered May 5th.",author:"System",ts:"May 5, 2026"}]},
-  {id:20,task:"Heater Flow Rate",category:"Sensors",owner:"Kasey",vendor:"McMaster",manufacturer:"Hedland (McMaster)",partNumber:"H617-010-R",description:"Flow meter for heater loop",qty:1,unitCost:520.8,leadTime:"1",procStatus:"Received",notes:"Delivered May 5th.",notesLog:[{text:"Delivered May 5th.",author:"System",ts:"May 5, 2026"}]},
-  {id:21,task:"HX Temp",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer/Omega",partNumber:"5TC-GG-T-30-72",description:"Thermocouple for HX temperature distribution",qty:4,unitCost:110.36,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground ~5 days.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:22,task:"Adsorb Air Diff P",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer/Omega",partNumber:"668-6",description:"Differential pressure sensor for adsorb bed",qty:1,unitCost:287.85,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground ~5 days.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:23,task:"Desorb Air Diff P",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer/Omega",partNumber:"668-6",description:"Differential pressure sensor for desorb bed",qty:1,unitCost:287.85,leadTime:"15",procStatus:"Ordered",notes:"UPS Ground ~5 days.",notesLog:[{text:"Ordered Apr 16 2026.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:24,task:"Collected Water Flow Rate / Level Sensor",category:"Sensors",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"UG03-0001-40",description:"Ultrasonic level sensor for water collection tank",qty:1,unitCost:660,leadTime:"6",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
-  {id:25,task:"3Ph Current Transducer",category:"Sensors",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"3ACTR100-42-24-F",description:"3-phase AC current transducer - ads fan, sweep fan, heater, dry cooler, pump",qty:5,unitCost:429,leadTime:"6",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
-  {id:26,task:"1Ph Current Transducer",category:"Sensors",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"ACT050-42L-F",description:"1-phase AC current transducer - dampers, cabinet",qty:2,unitCost:108,leadTime:"6",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
-  {id:27,task:"24VAC Transformer",category:"Electrical",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"PH250PG",description:"24VAC transformer for damper power",qty:1,unitCost:165,leadTime:"1",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
-  {id:28,task:"24VDC Power Supply",category:"Electrical",owner:"Kasey",vendor:"Automation Direct",manufacturer:"Automation Direct",partNumber:"PSR-24-240C",description:"24VDC power supply for sensors",qty:1,unitCost:94,leadTime:"1",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
-  {id:29,task:"Low Current Contactors",category:"Electrical",owner:"Kasey",vendor:"Grainger (Schneider)",manufacturer:"Schneider Electric",partNumber:"2MMT1",description:"IEC Magnetic contactor for condenser and fans",qty:2,unitCost:212.22,leadTime:"1",procStatus:"Received",notes:"Delivered May 6th.",notesLog:[{text:"Delivered May 6th.",author:"System",ts:"May 6, 2026"}]},
-  {id:30,task:"Heater Contactor",category:"Electrical",owner:"Kasey",vendor:"Grainger (Schneider)",manufacturer:"Schneider Electric",partNumber:"5NHD3",description:"IEC Magnetic contactor for heater",qty:1,unitCost:318.55,leadTime:"1",procStatus:"Received",notes:"Delivered May 5th.",notesLog:[{text:"Delivered May 5th.",author:"System",ts:"May 5, 2026"}]},
-  {id:31,task:"DPDT Relay",category:"Electrical",owner:"Kasey",vendor:"DigiKey (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"2967060",description:"DPDT relay for actuated ball valve",qty:2,unitCost:26.56,leadTime:"6",procStatus:"Ordered",notes:"Expected May 8th.",notesLog:[]},
-  {id:32,task:"TTL to RS485 Converter",category:"Electrical",owner:"Kasey",vendor:"WaveShare",manufacturer:"WaveShare",partNumber:"23778",description:"TTL to RS485 level shifter for Beckhoff",qty:2,unitCost:10.99,leadTime:"",procStatus:"Ordered",notes:"12-15 days delivery.",notesLog:[]},
-  {id:33,task:"5V Power Supply",category:"Electrical",owner:"Kasey",vendor:"DigiKey (Mean Well)",manufacturer:"Mean Well",partNumber:"HDR-15-5",description:"5V DIN rail power supply for UART",qty:1,unitCost:12.2,leadTime:"6",procStatus:"Ordered",notes:"Expected May 8th.",notesLog:[]},
-  {id:34,task:"Electronics Cabinet",category:"Electrical",owner:"Kasey",vendor:"Wolf Automation",manufacturer:"Wolf Automation",partNumber:"SCE-36H3612SSLP",description:"NEMA 4X LP 36x36x12 electronics enclosure",qty:1,unitCost:2055.31,leadTime:"",procStatus:"Received",notes:"Delivered May 7th.",notesLog:[{text:"Delivered May 7th.",author:"System",ts:"May 7, 2026"}]},
-  {id:35,task:"Electronics Subpanel",category:"Electrical",owner:"Kasey",vendor:"Wolf Automation",manufacturer:"Wolf Automation",partNumber:"SCE-36P36",description:"Bent subpanel 33x33x0.88 for electronics cabinet",qty:1,unitCost:149.74,leadTime:"",procStatus:"Received",notes:"Delivered May 7th.",notesLog:[{text:"Delivered May 7th.",author:"System",ts:"May 7, 2026"}]},
-  {id:36,task:"80/20 Frame Members",category:"Structure & Hardware",owner:"Chris",vendor:"80/20",manufacturer:"80/20",partNumber:"",description:"80/20 aluminum extrusion frame members",qty:1,unitCost:6200,leadTime:"",procStatus:"Quoted",notes:"Quoted, not yet ordered.",notesLog:[]},
-  {id:37,task:"5in Dia SS Pipe 36ft",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"36ft of low pressure 5in dia stainless steel pipe",qty:1,unitCost:1260,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:38,task:"3in Dia SS Pipe 30ft",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"30ft of low pressure 3in dia stainless steel pipe",qty:1,unitCost:600,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:39,task:"1.25in Dia SS Pipe 40ft",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"40ft of low pressure 1.25in dia stainless steel pipe",qty:1,unitCost:320,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:40,task:"SS Pipe Elbows 2.5in",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Low pressure 2.5in dia stainless steel pipe elbows",qty:32,unitCost:25,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:41,task:"SS Pipe Elbows 1.25in",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Low pressure 1.25in dia stainless steel pipe elbows",qty:16,unitCost:12,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:42,task:"PVC Pipe 1.5in 16.5ft",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"16.5ft of 1.5in dia PVC pipe",qty:1,unitCost:25,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:43,task:"PVC Pipe 1in 8.5in",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"8.5in of 1in dia PVC pipe",qty:1,unitCost:2,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:44,task:"PVC Elbows 1in",category:"Plumbing",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"1in dia PVC elbows",qty:8,unitCost:1.5,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:45,task:"Sheet Metal Enclosure - Aluminum",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Reactor sheet metal enclosure - aluminum",qty:16,unitCost:383.022,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:46,task:"Outlet Plenum - Aluminum",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Outlet plenum - aluminum",qty:4,unitCost:164.9592,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:47,task:"Recirculation Duct - Aluminum",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Recirculation duct - aluminum",qty:16,unitCost:23.8788,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:48,task:"Recirculation Duct Assembly - Aluminum",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Recirculation duct assembly - aluminum",qty:4,unitCost:336.4632,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:49,task:"Insulation 1in Rigid Foam",category:"Sheet Metal",owner:"Unassigned",vendor:"TBD",manufacturer:"",partNumber:"",description:"Insulation - 1in thick rigid foam",qty:1,unitCost:317.04,leadTime:"",procStatus:"Not ordered",notes:"Update needed.",notesLog:[]},
-  {id:50,task:"Aluminum Blind Rivets 3/16in 0.063-0.125in",category:"Structure & Hardware",owner:"Andrew",vendor:"McMaster",manufacturer:"McMaster",partNumber:"97447A045",description:"Aluminum Blind Rivets with Aluminum Mandrel, Domed Head, 3/16in Dia, for 0.063-0.125in Material Thickness, packs of 100",qty:1,unitCost:9.36,leadTime:"",procStatus:"Received",notes:"Same day delivery.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:51,task:"Aluminum Blind Rivets 3/16in 0.126-0.25in",category:"Structure & Hardware",owner:"Andrew",vendor:"McMaster",manufacturer:"McMaster",partNumber:"97447A050",description:"Aluminum Blind Rivets with Aluminum Mandrel, Domed Head, 3/16in Dia, for 0.126-0.25in Material Thickness, packs of 100",qty:1,unitCost:10.23,leadTime:"",procStatus:"Received",notes:"Same day delivery.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:52,task:"Long-Reach Ball-End Bit Socket",category:"Tools",owner:"Andrew",vendor:"McMaster",manufacturer:"McMaster",partNumber:"93167A170",description:"Long-Reach Ball-End Hex Bit Socket, 1/2in Square Drive, 5mm Drive, 5-1/8in Overall Length",qty:2,unitCost:15.55,leadTime:"",procStatus:"Received",notes:"Same day delivery.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:53,task:"Coolant Hose",category:"Structure & Hardware",owner:"Chris",vendor:"McMaster",manufacturer:"McMaster",partNumber:"5591K25",description:"High-Temperature Coolant Hose with Steel Wire Reinforcement, 2in ID, 2-3/8in OD",qty:1,unitCost:27.61,leadTime:"",procStatus:"Received",notes:"Delivered.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 8, 2026"}]},
-  {id:54,task:"Torque-Measuring Wrench",category:"Tools",owner:"Andrew",vendor:"McMaster",manufacturer:"McMaster",partNumber:"8976A76",description:"Torque-Measuring Wrench with NIST Certificate, Standard Head, 1/2in Square Drive, 17-1/2in Overall Length",qty:1,unitCost:319.92,leadTime:"",procStatus:"Received",notes:"Delivered.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 16, 2026"}]},
-  {id:55,task:"Cast Acrylic Sheet 1/16in",category:"Structure & Hardware",owner:"Chris",vendor:"McMaster",manufacturer:"McMaster",partNumber:"8560K174",description:"Clear Scratch and UV-Resistant Cast Acrylic Sheet, 24x24x1/16in",qty:1,unitCost:19.92,leadTime:"",procStatus:"Received",notes:"Delivered.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 28, 2026"}]},
-  {id:56,task:"Cast Acrylic Sheet 1/8in",category:"Structure & Hardware",owner:"Chris",vendor:"McMaster",manufacturer:"McMaster",partNumber:"8560K259",description:"Clear Scratch and UV-Resistant Cast Acrylic Sheet, 24x24x1/8in",qty:2,unitCost:32,leadTime:"",procStatus:"Received",notes:"Delivered.",notesLog:[{text:"Delivered.",author:"System",ts:"Apr 28, 2026"}]},
-  {id:57,task:"DIN Rail",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1207640",description:"DIN rail for electronics mounting",qty:20,unitCost:9.59,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
-  {id:58,task:"Thermocouple Jack",category:"Electrical",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer Omega",partNumber:"MJP1-12-T",description:"Thermocouple panel passthrough jack",qty:2,unitCost:91.07,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
-  {id:59,task:"Terminal Connectors",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"3044076",description:"DIN rail terminal connectors",qty:200,unitCost:1.31,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
-  {id:60,task:"Power Distribution Bus - Red",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046951",description:"Red power distribution bus bar",qty:4,unitCost:8.12,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
-  {id:61,task:"Power Distribution Bus - Blue",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046950",description:"Blue power distribution bus bar",qty:4,unitCost:8.12,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
-  {id:62,task:"Power Distribution Bus - Black",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046955",description:"Black power distribution bus bar",qty:4,unitCost:8.12,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
-  {id:63,task:"Power Distribution Bus - Grey",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046949",description:"Grey power distribution bus bar",qty:4,unitCost:8.12,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
-  {id:64,task:"Power Distribution Bus - White",category:"Electrical",owner:"Kasey",vendor:"DigiKey",manufacturer:"Phoenix Contact",partNumber:"1046956",description:"White power distribution bus bar",qty:4,unitCost:6.88,leadTime:"7",procStatus:"Ordered",notes:"Expected May 11th.",notesLog:[]},
-  {id:65,task:"HX Water Temp",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"Dwyer Omega",partNumber:"TC-T-NPT-U-72",description:"In-house sensor for HX water temperature",qty:2,unitCost:77.41,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
-  {id:66,task:"HX Water Pressure",category:"Sensors",owner:"Kasey",vendor:"Newark",manufacturer:"Newark",partNumber:"PX309-100GI",description:"In-house sensor for HX water pressure",qty:1,unitCost:469.88,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
-  {id:67,task:"Condenser Water Temp",category:"Sensors",owner:"Kasey",vendor:"Dwyer Omega",manufacturer:"DwyerOmega",partNumber:"TC-T-NPT-U-72",description:"In-house sensor for condenser water temperature",qty:2,unitCost:77.41,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
-  {id:68,task:"Condenser Water Pressure",category:"Sensors",owner:"Kasey",vendor:"Newark",manufacturer:"Newark",partNumber:"PX309-100GI",description:"In-house sensor for condenser water pressure",qty:1,unitCost:469.88,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
-  {id:69,task:"Adsorb Air Flow Rate",category:"Sensors",owner:"Kasey",vendor:"Newark",manufacturer:"Newark",partNumber:"FMA904A-MA",description:"In-house sensor for adsorb air flow rate",qty:1,unitCost:1086.81,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
-  {id:70,task:"Desorb Air Flow Rate",category:"Sensors",owner:"Kasey",vendor:"Newark",manufacturer:"Newark",partNumber:"FMA904A-MA",description:"In-house sensor for desorb air flow rate",qty:1,unitCost:1086.81,leadTime:"",procStatus:"Received",notes:"In house - not ordering. On total BOM for cost tracking.",notesLog:[]},
-  {id:71,task:"IPC Base Unit",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"C6025-0010 / 000536828",description:"IPC - 8GB DDR4 RAM, 40GB M.2 SSD, 3x Ethernet on-board",qty:1,unitCost:3139,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[{text:"FedEx 381139871672 - Expected May 11th.",author:"System",ts:"Apr 28, 2026"}]},
-  {id:72,task:"Processor Upgrade",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"C9900-C588",description:"11th gen Intel Core i3-1115G4E, 2.2GHz, 2 cores (TC3: 50)",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"Included in IPC order.",notesLog:[]},
-  {id:73,task:"80GB M.2 SSD",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"C9900-H597",description:"80GB M.2 SSD, 3D flash, extended temperature range",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"Included in IPC order.",notesLog:[]},
-  {id:74,task:"Windows 11 IoT License",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"C9900-S540",description:"Windows 11 IoT Enterprise 2024 LTSC, 64 bit",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"Included in IPC order.",notesLog:[]},
-  {id:75,task:"EtherCAT Coupler",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EK1100",description:"EtherCAT coupler",qty:1,unitCost:178,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
-  {id:76,task:"EtherCAT Extension",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EK1110",description:"EtherCAT extension terminal",qty:1,unitCost:96,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
-  {id:77,task:"EtherCAT Digital Input 16ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"ED1809",description:"EtherCAT Terminal, 16-channel digital input, 24V DC, 3ms, push-in",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
-  {id:78,task:"EtherCAT Relay Output 2ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL2602",description:"EtherCAT Terminal, 2-channel relay output, 230V AC, 30V DC, 5A",qty:2,unitCost:66,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
-  {id:79,task:"EtherCAT Digital Output 8ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL2838",description:"EtherCAT Terminal, 8-channel digital output, 24V DC, 2A, with diagnostics",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
-  {id:80,task:"EtherCAT Analog Input 8ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL3078",description:"EtherCAT Terminal, 8-channel analog input, multi-function, +/-10V, +/-20mA, 16bit",qty:2,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
-  {id:81,task:"EtherCAT TC Input 8ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL3318",description:"EtherCAT Terminal, 8-channel analog input, temperature, thermocouple, 16bit",qty:3,unitCost:432,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
-  {id:82,task:"EtherCAT RS485 Serial 2ch",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL6022",description:"EtherCAT Terminal, 2-channel communication interface, serial, RS422/RS485, D-sub",qty:3,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
-  {id:83,task:"TwinCAT 3.1 License",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL6070-0033 / 000015752",description:"EtherCAT Terminal, license key for TwinCAT 3.1",qty:1,unitCost:160,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
-  {id:84,task:"TwinCAT Subpart 1",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL6070-0033",description:"Subpart for TwinCAT license item 83",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
-  {id:85,task:"TwinCAT Subpart 2",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"TC1000-0190",description:"Subpart for TwinCAT license item 83",qty:1,unitCost:0,leadTime:"",procStatus:"Ordered",notes:"",notesLog:[]},
-  {id:86,task:"EtherCAT E-Bus Power Supply",category:"PLC & Controls",owner:"Kasey",vendor:"Beckhoff",manufacturer:"Beckhoff",partNumber:"EL9410",description:"EtherCAT Terminal, power supply for E-bus, 24V DC, 2A, with diagnostics",qty:1,unitCost:87,leadTime:"",procStatus:"Ordered",notes:"FedEx 381139871672 - Expected May 11th.",notesLog:[]},
-  {id:87,task:"M8-4A Male Field Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1482520 SACC-M 8MS-4PL-M",description:"M8 4-pin male field connector, 5VDC",qty:5,unitCost:27.15,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
-  {id:88,task:"M8-4A Female Litz Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1500363 SACC-E-M 8FS-4CON-M8/0,5",description:"M8 4-pin female litz connector, 5VDC",qty:5,unitCost:22.47,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
-  {id:89,task:"M12-4A Male Field Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1424666 SACC-M12MS-4PL SH",description:"M12 4-pin male field connector, 24VDC",qty:19,unitCost:23.19,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
-  {id:90,task:"M12-4A Female Litz Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1523434 SACC-E-FS-4CON-M16/0,5 SCO",description:"M12 4-pin female litz connector, 24VDC",qty:19,unitCost:19.83,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
-  {id:91,task:"M12-5A Male Field Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1424658 SACC-M12MS-5PL SH",description:"M12 5-pin male field connector, 24VAC",qty:11,unitCost:25.7,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
-  {id:92,task:"M12-5A Female Litz Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1411571 SACC-E-M12FS-5P-M16XL/0,5",description:"M12 5-pin female litz connector, 24VAC",qty:11,unitCost:14.97,leadTime:"7",procStatus:"Partial",notes:"Partial Backorder. Expected May 15th.",notesLog:[]},
-  {id:93,task:"M12-5B Male Field Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1424674 SACC-M12MSB-5PL SH IB",description:"M12 5-pin B-coded male field connector, DATA",qty:11,unitCost:27.8,leadTime:"7",procStatus:"Ordered",notes:"Expected May 15th.",notesLog:[]},
-  {id:94,task:"M12-5B Female Litz Connector",category:"Connectors",owner:"Kasey",vendor:"Mouser (Phoenix Contact)",manufacturer:"Phoenix Contact",partNumber:"1411572 SACC-E-M12FSB-5P-M16XL/0,5",description:"M12 5-pin B-coded female litz connector, DATA",qty:11,unitCost:14.97,leadTime:"",procStatus:"On hold",notes:"Backorder 5 weeks.",notesLog:[]}
-];
+const BOM_SEED_DATA = [{"id": 1, "task": "Microchannel Heat Exchanger", "category": "COTS Components", "manufacturer": "Hylita", "partNumber": "", "description": "1500x1700 Finless Microchannel HX with Brazed Perf Sheet Filter with Gap", "qty": 6, "unitCost": 1120, "leadTime": "20", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 6, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 2, "task": "Heater", "category": "Equipment", "manufacturer": "IMS", "partNumber": "RQT-3650", "description": "36kW Hot Water Heater with Circulator (up to 95 C)", "qty": 1, "unitCost": 6830, "leadTime": "30", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 1, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 3, "task": "Heater Modbus TCP Module", "category": "Equipment", "manufacturer": "IMS", "partNumber": "", "description": "", "qty": 1, "unitCost": 340, "leadTime": "30", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 1, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 4, "task": "Hot Water Storage", "category": "Equipment", "manufacturer": "Lochinvar (AF Supply)", "partNumber": "", "description": "Hot Water Storage up to 95C", "qty": 1, "unitCost": 2742, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 1, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 5, "task": "Hot Water Control Valves", "category": "COTS Components", "manufacturer": "Assured Automation", "partNumber": "H26NRXN0", "description": "Stainless Steel Electric One Way Valves", "qty": 1, "unitCost": 95, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 1, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 6, "task": "Adsorb Blower", "category": "COTS Components", "manufacturer": "", "partNumber": "", "description": "", "qty": 1, "unitCost": 721.2, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 7, "task": "Sweep Blower", "category": "COTS Components", "manufacturer": "EBMpapst", "partNumber": "", "description": "", "qty": 2, "unitCost": 103.5, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 2, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 8, "task": "Condenser Cooling Water Pump", "category": "COTS Components", "manufacturer": "AMT (PumpingSolutions)", "partNumber": "AMT 368C-95", "description": "", "qty": 1, "unitCost": 698, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 9, "task": "Condenser Cooling Water Pump VFD", "category": "COTS Components", "manufacturer": "WEG (PumpingSolutions)", "partNumber": "CFW500A01P0T4NB20G2", "description": "", "qty": 1, "unitCost": 582, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 10, "task": "Dry Cooler", "category": "COTS Components", "manufacturer": "Hylita", "partNumber": "", "description": "", "qty": 1, "unitCost": 800, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 1, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 11, "task": "Condenser", "category": "COTS Components", "manufacturer": "Hylita", "partNumber": "", "description": "", "qty": 1, "unitCost": 300, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 12, "task": "Air Preheat HX", "category": "COTS Components", "manufacturer": "Hylita", "partNumber": "", "description": "", "qty": 1, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 13, "task": "Sweep Damper", "category": "COTS Components", "manufacturer": "Greenheck (NSWC)", "partNumber": "VCD-33", "description": "GHDAMPER: Greenheck Dampers VCD-33 18X10 W/ACT", "qty": 4, "unitCost": 539.9, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 4, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 14, "task": "Adsorb Damper", "category": "COTS Components", "manufacturer": "Greenheck (NSWC)", "partNumber": "", "description": "", "qty": 4, "unitCost": 771, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 4, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 15, "task": "Trailer", "category": "Equipment", "manufacturer": "", "partNumber": "", "description": "", "qty": 1, "unitCost": 10000, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 16, "task": "230V to 460V Transformer", "category": "Equipment", "manufacturer": "Maddox", "partNumber": "", "description": "", "qty": 1, "unitCost": 4695, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 17, "task": "Inlet RH Sensor", "category": "Electronics", "manufacturer": "Rotronic (Dwyer/Omega)", "partNumber": "HC2A-S(H)", "description": "", "qty": 1, "unitCost": 646, "leadTime": "15", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 18, "task": "Outlet RH Sensor", "category": "Electronics", "manufacturer": "Rotronic (Dwyer/Omega)", "partNumber": "HC2A-S(H)", "description": "", "qty": 1, "unitCost": 646, "leadTime": "15", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 19, "task": "Condenser Flow Rate", "category": "Electronics", "manufacturer": "Hedland (McMaster)", "partNumber": "H617-010-R", "description": "", "qty": 1, "unitCost": 520.8, "leadTime": "1", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 20, "task": "Heater Flow Rate", "category": "Electronics", "manufacturer": "Hedland (McMaster)", "partNumber": "H617-010-R", "description": "", "qty": 1, "unitCost": 520.8, "leadTime": "1", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 21, "task": "HX Temp", "category": "Electronics", "manufacturer": "Dwyer/Omega", "partNumber": "5TC-GG-T-30-72", "description": "", "qty": 4, "unitCost": 110.36, "leadTime": "15", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 4, "linkedTaskId": null}, {"id": 22, "task": "Adsorb Air Diff P", "category": "Electronics", "manufacturer": "Dwyer/Omega", "partNumber": "668-6", "description": "", "qty": 1, "unitCost": 287.85, "leadTime": "15", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 23, "task": "Desorb Air Diff P", "category": "Electronics", "manufacturer": "Dwyer/Omega", "partNumber": "668-6", "description": "", "qty": 1, "unitCost": 287.85, "leadTime": "15", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 24, "task": "Collected Water Level Sensor", "category": "Electronics", "manufacturer": "Automation Direct", "partNumber": "UG03-0001-40", "description": "", "qty": 1, "unitCost": 660, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 25, "task": "3Ph Current Transducer", "category": "Electronics", "manufacturer": "Automation Direct", "partNumber": "3ACTR100-42-24-F", "description": "", "qty": 5, "unitCost": 429, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 5, "linkedTaskId": null}, {"id": 26, "task": "1Ph Current Transducer", "category": "Electronics", "manufacturer": "Automation Direct", "partNumber": "ACT050-42L-F", "description": "", "qty": 2, "unitCost": 108, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 27, "task": "24VAC Transformer", "category": "Electronics", "manufacturer": "Automation Direct", "partNumber": "PH250PG", "description": "", "qty": 1, "unitCost": 165, "leadTime": "1", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 28, "task": "24VDC Power Supply", "category": "Electronics", "manufacturer": "Automation Direct", "partNumber": "PSR-24-240C", "description": "", "qty": 1, "unitCost": 94, "leadTime": "1", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 29, "task": "Low Current Contactors", "category": "Electronics", "manufacturer": "Schneider Electric (Grainger)", "partNumber": "2MMT1", "description": "", "qty": 2, "unitCost": 212.22, "leadTime": "1", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 30, "task": "Heater Contactor", "category": "Electronics", "manufacturer": "Schneider Electric (Grainger)", "partNumber": "5NHD3", "description": "", "qty": 1, "unitCost": 318.55, "leadTime": "1", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 31, "task": "DPDT Relay", "category": "Electronics", "manufacturer": "Phoenix Contact (DigiKey)", "partNumber": "2967060", "description": "", "qty": 2, "unitCost": 26.56, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 32, "task": "TTL to RS485 Converter", "category": "Electronics", "manufacturer": "Waveshare", "partNumber": "23778", "description": "", "qty": 2, "unitCost": 10.99, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 2, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 33, "task": "5V Power Supply", "category": "Electronics", "manufacturer": "Mean Well (DigiKey)", "partNumber": "HDR-15-5", "description": "", "qty": 1, "unitCost": 12.2, "leadTime": "6", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 34, "task": "Electronics Cabinet", "category": "Electronics", "manufacturer": "Wolf Automation", "partNumber": "SCE-36H3612SSLP", "description": "", "qty": 1, "unitCost": 2055.31, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 35, "task": "Electronics Subpanel", "category": "Electronics", "manufacturer": "Wolf Automation", "partNumber": "SCE-36P36", "description": "", "qty": 1, "unitCost": 149.74, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 36, "task": "80/20 Frame Members", "category": "Structure & Hardware", "manufacturer": "80/20", "partNumber": "", "description": "", "qty": 1, "unitCost": 6200, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 1, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 37, "task": "SS Pipe 5in Dia 36ft", "category": "Plumbing", "manufacturer": "", "partNumber": "", "description": "", "qty": 1, "unitCost": 1260, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 38, "task": "SS Pipe 3in Dia 30ft", "category": "Plumbing", "manufacturer": "", "partNumber": "", "description": "", "qty": 1, "unitCost": 600, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 39, "task": "SS Pipe 1.25in Dia 40ft", "category": "Plumbing", "manufacturer": "", "partNumber": "", "description": "", "qty": 1, "unitCost": 320, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 40, "task": "SS Pipe Elbows 2.5in", "category": "Plumbing", "manufacturer": "", "partNumber": "", "description": "", "qty": 32, "unitCost": 25, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 41, "task": "SS Pipe Elbows 1.25in", "category": "Plumbing", "manufacturer": "", "partNumber": "", "description": "", "qty": 16, "unitCost": 12, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 42, "task": "PVC Pipe 1.5in 16.5ft", "category": "Plumbing", "manufacturer": "", "partNumber": "", "description": "", "qty": 1, "unitCost": 25, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 43, "task": "PVC Pipe 1in 8.5in", "category": "Plumbing", "manufacturer": "", "partNumber": "", "description": "", "qty": 1, "unitCost": 2, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 44, "task": "PVC Elbows 1in", "category": "Plumbing", "manufacturer": "", "partNumber": "", "description": "", "qty": 8, "unitCost": 1.5, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 45, "task": "Sheet Metal Enclosure Aluminum", "category": "Sheet Metal", "manufacturer": "", "partNumber": "", "description": "", "qty": 16, "unitCost": 383.022, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 46, "task": "Outlet Plenum Aluminum", "category": "Sheet Metal", "manufacturer": "", "partNumber": "", "description": "", "qty": 4, "unitCost": 164.9592, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 47, "task": "Recirculation Duct Aluminum", "category": "Sheet Metal", "manufacturer": "", "partNumber": "", "description": "", "qty": 16, "unitCost": 23.8788, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 48, "task": "Recirculation Duct Assembly Aluminum", "category": "Sheet Metal", "manufacturer": "", "partNumber": "", "description": "", "qty": 4, "unitCost": 336.4632, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 49, "task": "Insulation 1in Rigid Foam", "category": "Sheet Metal", "manufacturer": "", "partNumber": "", "description": "", "qty": 1, "unitCost": 317.04, "leadTime": "", "notes": "Update", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 50, "task": "Aluminum Blind Rivets 97447A045", "category": "Structure & Hardware", "manufacturer": "McMaster", "partNumber": "97447A045", "description": "3/16in Dia 0.063-0.125in thickness", "qty": 1, "unitCost": 9.36, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 51, "task": "Aluminum Blind Rivets 97447A050", "category": "Structure & Hardware", "manufacturer": "McMaster", "partNumber": "97447A050", "description": "3/16in Dia 0.126-0.25in thickness", "qty": 1, "unitCost": 10.23, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 52, "task": "Long-Reach Ball-End Bit Socket", "category": "Structure & Hardware", "manufacturer": "McMaster", "partNumber": "93167A170", "description": "1/2in Square Drive 5mm", "qty": 2, "unitCost": 15.55, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 53, "task": "Coolant Hose", "category": "Structure & Hardware", "manufacturer": "McMaster", "partNumber": "5591K25", "description": "High-Temp 2in ID 2-3/8in OD", "qty": 1, "unitCost": 27.61, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 54, "task": "Torque-Measuring Wrench", "category": "Tools", "manufacturer": "McMaster", "partNumber": "8976A76", "description": "Standard Head 1/2in Square Drive NIST Cert", "qty": 1, "unitCost": 319.92, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 55, "task": "Cast Acrylic 1/16in", "category": "Structure & Hardware", "manufacturer": "McMaster", "partNumber": "8560K174", "description": "24x24x1/16in clear cast acrylic", "qty": 1, "unitCost": 19.92, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 56, "task": "Cast Acrylic 1/8in", "category": "Structure & Hardware", "manufacturer": "McMaster", "partNumber": "8560K259", "description": "24x24x1/8in clear cast acrylic", "qty": 2, "unitCost": 32, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 57, "task": "DIN Rail", "category": "Electronics", "manufacturer": "DigiKey", "partNumber": "1207640", "description": "Electronics Mounting", "qty": 20, "unitCost": 9.59, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 20, "linkedTaskId": null}, {"id": 58, "task": "Thermocouple Jack", "category": "Electronics", "manufacturer": "Dwyer Omega", "partNumber": "MJP1-12-T", "description": "Thermocouple Passthrough", "qty": 2, "unitCost": 91.07, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 59, "task": "Terminal Connectors", "category": "Electronics", "manufacturer": "DigiKey", "partNumber": "3044076", "description": "Terminal Connector", "qty": 200, "unitCost": 1.31, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 200, "linkedTaskId": null}, {"id": 60, "task": "Power Distribution Bus Red", "category": "Electronics", "manufacturer": "DigiKey", "partNumber": "1046951", "description": "Power Distribution", "qty": 4, "unitCost": 8.12, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 4, "linkedTaskId": null}, {"id": 61, "task": "Power Distribution Bus Blue", "category": "Electronics", "manufacturer": "DigiKey", "partNumber": "1046950", "description": "Power Distribution", "qty": 4, "unitCost": 8.12, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 4, "linkedTaskId": null}, {"id": 62, "task": "Power Distribution Bus Black", "category": "Electronics", "manufacturer": "DigiKey", "partNumber": "1046955", "description": "Power Distribution", "qty": 4, "unitCost": 8.12, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 4, "linkedTaskId": null}, {"id": 63, "task": "Power Distribution Bus Grey", "category": "Electronics", "manufacturer": "DigiKey", "partNumber": "1046949", "description": "Power Distribution", "qty": 4, "unitCost": 8.12, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 4, "linkedTaskId": null}, {"id": 64, "task": "Power Distribution Bus White", "category": "Electronics", "manufacturer": "DigiKey", "partNumber": "1046956", "description": "Power Distribution", "qty": 4, "unitCost": 6.88, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 4, "linkedTaskId": null}, {"id": 65, "task": "HX Water Temp", "category": "In-House Sensors", "manufacturer": "Dwyer Omega", "partNumber": "TC-T-NPT-U-72", "description": "In-house sensor", "qty": 2, "unitCost": 77.41, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 66, "task": "HX Water Pressure", "category": "In-House Sensors", "manufacturer": "Newark", "partNumber": "PX309-100GI", "description": "In-house sensor", "qty": 1, "unitCost": 469.88, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 67, "task": "Condenser Water Temp", "category": "In-House Sensors", "manufacturer": "DwyerOmega", "partNumber": "TC-T-NPT-U-72", "description": "In-house sensor", "qty": 2, "unitCost": 77.41, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 68, "task": "Condenser Water Pressure", "category": "In-House Sensors", "manufacturer": "Newark", "partNumber": "PX309-100GI", "description": "In-house sensor", "qty": 1, "unitCost": 469.88, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 69, "task": "Adsorb Air Flow Rate", "category": "In-House Sensors", "manufacturer": "Newark", "partNumber": "FMA904A-MA", "description": "In-house sensor", "qty": 1, "unitCost": 1086.81, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 70, "task": "Desorb Air Flow Rate", "category": "In-House Sensors", "manufacturer": "Newark", "partNumber": "FMA904A-MA", "description": "In-house sensor", "qty": 1, "unitCost": 1086.81, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 71, "task": "IPC Base Unit", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "C6025-0010", "description": "8GB DDR4 RAM 40GB M.2 SSD 3x Ethernet", "qty": 1, "unitCost": 3139, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 72, "task": "Processor Upgrade C9900-C588", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "C9900-C588", "description": "i3-1115G4E 2.2GHz 2 cores", "qty": 1, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 73, "task": "80GB M.2 SSD C9900-H597", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "C9900-H597", "description": "Extended temp range", "qty": 1, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 74, "task": "Windows 11 IoT C9900-S540", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "C9900-S540", "description": "Windows 11 IoT Enterprise 2024 LTSC", "qty": 1, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 75, "task": "EtherCAT Coupler EK1100", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EK1100", "description": "", "qty": 1, "unitCost": 178, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 76, "task": "EtherCAT Extension EK1110", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EK1110", "description": "", "qty": 1, "unitCost": 96, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 77, "task": "EtherCAT Digital Input ED1809", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "ED1809", "description": "16-channel digital input 24V DC", "qty": 1, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 1, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 78, "task": "EtherCAT Relay Output EL2602", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EL2602", "description": "2-channel relay 230V AC", "qty": 2, "unitCost": 66, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 79, "task": "EtherCAT Digital Output EL2838", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EL2838", "description": "8-channel digital output 24V DC", "qty": 1, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 1, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 80, "task": "EtherCAT Analog Input EL3078", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EL3078", "description": "8-channel analog input 16bit", "qty": 2, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 2, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 81, "task": "EtherCAT TC Input EL3318", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EL3318", "description": "8-channel thermocouple input", "qty": 3, "unitCost": 432, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 3, "linkedTaskId": null}, {"id": 82, "task": "EtherCAT RS485 EL6022", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EL6022", "description": "2-channel RS422/RS485", "qty": 3, "unitCost": 372, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 3, "linkedTaskId": null}, {"id": 83, "task": "TwinCAT License EL6070", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EL6070-0033", "description": "TwinCAT 3.1 license", "qty": 1, "unitCost": 160, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 84, "task": "TwinCAT Subpart EL6070-0033", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EL6070-0033", "description": "Subpart", "qty": 1, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 85, "task": "TwinCAT Subpart TC1000-0190", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "TC1000-0190", "description": "Subpart", "qty": 1, "unitCost": 0, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 86, "task": "EtherCAT E-Bus Power Supply EL9410", "category": "Electronics", "manufacturer": "Beckhoff", "partNumber": "EL9410", "description": "E-bus power supply 24V DC 2A", "qty": 1, "unitCost": 87, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 87, "task": "M8-4A Male Field Connector", "category": "Electronics", "manufacturer": "Phoenix Contact (Mouser)", "partNumber": "1482520 SACC-M 8MS-4PL-M", "description": "5VDC Male", "qty": 5, "unitCost": 27.15, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 5, "linkedTaskId": null}, {"id": 88, "task": "M8-4A Female Litz Connector", "category": "Electronics", "manufacturer": "Phoenix Contact (Mouser)", "partNumber": "1500363 SACC-E-M 8FS-4CON-M8/0,5", "description": "5VDC Female", "qty": 5, "unitCost": 22.47, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 5, "linkedTaskId": null}, {"id": 89, "task": "M12-4A Male Field Connector", "category": "Electronics", "manufacturer": "Phoenix Contact (Mouser)", "partNumber": "1424666 SACC-M12MS-4PL SH", "description": "24VDC Male", "qty": 19, "unitCost": 23.19, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 19, "linkedTaskId": null}, {"id": 90, "task": "M12-4A Female Litz Connector", "category": "Electronics", "manufacturer": "Phoenix Contact (Mouser)", "partNumber": "1523434 SACC-E-FS-4CON-M16/0,5 SCO", "description": "24VDC Female", "qty": 19, "unitCost": 19.83, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 19, "linkedTaskId": null}, {"id": 91, "task": "M12-5A Male Field Connector", "category": "Electronics", "manufacturer": "Phoenix Contact (Mouser)", "partNumber": "1424658 SACC-M12MS-5PL SH", "description": "24VAC Male", "qty": 11, "unitCost": 25.7, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 11, "linkedTaskId": null}, {"id": 92, "task": "M12-5A Female Litz Connector", "category": "Electronics", "manufacturer": "Phoenix Contact (Mouser)", "partNumber": "1411571 SACC-E-M12FS-5P-M16XL/0,5", "description": "24VAC Female", "qty": 11, "unitCost": 14.97, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 11, "linkedTaskId": null}, {"id": 93, "task": "M12-5B Male Field Connector", "category": "Electronics", "manufacturer": "Phoenix Contact (Mouser)", "partNumber": "1424674 SACC-M12MSB-5PL SH IB", "description": "DATA Male", "qty": 11, "unitCost": 27.8, "leadTime": "7", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 11, "linkedTaskId": null}, {"id": 94, "task": "M12-5B Female Litz Connector", "category": "Electronics", "manufacturer": "Phoenix Contact (Mouser)", "partNumber": "1411572 SACC-E-M12FSB-5P-M16XL/0,5", "description": "DATA Female", "qty": 11, "unitCost": 14.97, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 11, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}, {"id": 95, "task": "Corner Bracket 40mm", "category": "Structure & Hardware", "manufacturer": "McMaster", "partNumber": "6266N11", "description": "Heavy Duty Locking-Slotted Fitting", "qty": 1, "unitCost": 36.03, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 1, "linkedTaskId": null}, {"id": 96, "task": "Clamping Hanger 2-3/8in", "category": "Structure & Hardware", "manufacturer": "McMaster", "partNumber": "2615T19", "description": "Vibration-Damping Zinc-Plated Steel", "qty": 2, "unitCost": 4.94, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 0, "qtyShipped": 0, "qtyReceived": 2, "linkedTaskId": null}, {"id": 97, "task": "Hook Up Wire Kit 18 AWG", "category": "Electronics", "manufacturer": "Remington Industries", "partNumber": "18STRGXLKIT10COLOR100", "description": "GXL Automotive Primary Wire", "qty": 2, "unitCost": 120.91, "leadTime": "", "notes": "", "notesLog": [], "qtyQuoted": 0, "qtyOrdered": 2, "qtyShipped": 0, "qtyReceived": 0, "linkedTaskId": null}];
 
 // Category → Gantt task ID mapping
 const BOM_CATEGORY_TASK_MAP = {
@@ -3567,7 +3513,7 @@ let bomCollapsed = new Set(); // tracks which categories are collapsed
 
 function loadBom(){
   try {
-    const saved = localStorage.getItem('bubbles_bom_v7');
+    const saved = localStorage.getItem('bubbles_bom_v8');
     if(saved){
       const parsed = JSON.parse(saved);
       bomItems = parsed.items || [];
@@ -3582,7 +3528,7 @@ function loadBom(){
 }
 
 function saveBom(){
-  localStorage.setItem('bubbles_bom_v7', JSON.stringify({items: bomItems, bomIds: BOM_IDS}));
+  localStorage.setItem('bubbles_bom_v8', JSON.stringify({items: bomItems, bomIds: BOM_IDS}));
   scheduleBomPush();
   scheduleGhBomPush();
 }
@@ -3630,20 +3576,14 @@ async function pullBomFromFirebase(){
 }
 
 function mergeExcelBom(excelRows){
-  // Filter out empty rows
   const validRows = excelRows.filter(r => r.component && r.component.trim());
-
   for(const row of validRows){
     const component = (row.component || '').trim();
     if(!component) continue;
-
-    // Try to find matching item by component name
     const existing = bomItems.find(i =>
       i.task && i.task.toLowerCase().includes(component.toLowerCase().substring(0,15))
     );
-
     if(existing){
-      // Update fields from Excel — Linda owns these
       if(row.vendor) existing.vendor = row.vendor.trim();
       if(row.partNo) existing.partNumber = row.partNo.trim();
       if(row.deviceUsage) existing.description = row.deviceUsage.trim();
@@ -3651,13 +3591,22 @@ function mergeExcelBom(excelRows){
       if(row.unitCost) existing.unitCost = parseFloat(row.unitCost) || existing.unitCost;
       if(row.notes) existing.notes = row.notes.trim();
       if(row.team) existing.owner = row.team.trim();
-      // Convert Excel serial date to readable string
+      // Map Yes/No pipeline columns to qty values
+      const qty = parseInt(row.qty)||existing.qty||0;
+      if(row.received==='Yes'||row.received===true){ existing.qtyReceived=qty; existing.qtyShipped=0; existing.qtyOrdered=0; existing.qtyQuoted=0; }
+      else if(row.shipped==='Yes'||row.shipped===true){ existing.qtyShipped=qty-(existing.qtyReceived||0); existing.qtyOrdered=0; existing.qtyQuoted=0; }
+      else if(row.ordered==='Yes'||row.ordered===true){ existing.qtyOrdered=qty-(existing.qtyShipped||0)-(existing.qtyReceived||0); existing.qtyQuoted=0; }
+      else if(row.quoted==='Yes'||row.quoted===true){ existing.qtyQuoted=qty-(existing.qtyOrdered||0)-(existing.qtyShipped||0)-(existing.qtyReceived||0); }
       if(row.dateOrder && !isNaN(row.dateOrder)){
-        const d = new Date((parseInt(row.dateOrder) - 25569) * 86400000);
+        const d = new Date((parseInt(row.dateOrder)-25569)*86400000);
         existing.dateOrdered = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
       }
     } else {
-      // New item from Excel — add it to BOM
+      const qty = parseInt(row.qty)||0;
+      const isReceived = row.received==='Yes'||row.received===true;
+      const isShipped = row.shipped==='Yes'||row.shipped===true;
+      const isOrdered = row.ordered==='Yes'||row.ordered===true;
+      const isQuoted = row.quoted==='Yes'||row.quoted===true;
       bomItems.push({
         id: 'xl_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
         task: component,
@@ -3666,12 +3615,12 @@ function mergeExcelBom(excelRows){
         owner: (row.team||'Unassigned').trim(),
         vendor: (row.vendor||'').trim(),
         partNumber: (row.partNo||'').trim(),
-        qty: parseInt(row.qty)||0,
-        unitCost: parseFloat(row.unitCost)||0,
-        procStatus: 'Not ordered',
-        notes: (row.notes||'').trim(),
-        notesLog: [],
-        linkedTaskId: null
+        qty, unitCost: parseFloat(row.unitCost)||0,
+        qtyQuoted: isQuoted&&!isOrdered ? qty : 0,
+        qtyOrdered: isOrdered&&!isShipped ? qty : 0,
+        qtyShipped: isShipped&&!isReceived ? qty : 0,
+        qtyReceived: isReceived ? qty : 0,
+        notes: (row.notes||'').trim(), notesLog: [], linkedTaskId: null
       });
     }
   }
@@ -3700,7 +3649,7 @@ function renderBom(){
   const body = document.getElementById('bom-body');
   if(!body) return;
 
-  // Update category filter dropdown
+  // Update category filter
   const catFilter = document.getElementById('bom-cat-filter');
   const activeCat = catFilter ? catFilter.value : '';
   if(catFilter){
@@ -3709,15 +3658,18 @@ function renderBom(){
     catFilter.innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option value="${c}" ${c===cur?'selected':''}>${c}</option>`).join('');
   }
 
-  let grandTotal = 0;
-  let countReceived = 0, countOrdered = 0, countNotOrdered = 0, countOther = 0;
+  let grandProjected = 0, grandSpent = 0;
+  let countReceived = 0, countOrdered = 0, countNotOrdered = 0;
+
   for(const item of bomItems){
-    const ps = item.procStatus||'Not ordered';
-    if(ps==='Received') countReceived++;
-    else if(ps==='Ordered'||ps==='In progress'||ps==='Partial') countOrdered++;
-    else if(ps==='Not ordered'||ps==='Quoted') countNotOrdered++;
-    else countOther++;
-    grandTotal += (parseFloat(item.unitCost)||0)*(parseInt(item.qty)||0);
+    const qty = parseInt(item.qty)||0;
+    const cost = parseFloat(item.unitCost)||0;
+    grandProjected += qty * cost;
+    const spentQty = (parseInt(item.qtyOrdered)||0) + (parseInt(item.qtyShipped)||0) + (parseInt(item.qtyReceived)||0);
+    grandSpent += spentQty * cost;
+    if((item.qtyReceived||0) >= qty && qty > 0) countReceived++;
+    else if((item.qtyOrdered||0) > 0 || (item.qtyShipped||0) > 0) countOrdered++;
+    else countNotOrdered++;
   }
 
   const displayItems = activeCat ? bomItems.filter(i=>i.category===activeCat) : bomItems;
@@ -3725,11 +3677,12 @@ function renderBom(){
   if(displayItems.length === 0){
     body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:50px 20px;">
       <div style="font-size:28px;margin-bottom:10px;">📦</div>
-      <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:6px;">No items in this category</div>
-      <button class="btn-primary" onclick="openAddBomItem()" style="margin-top:8px;">+ Add component</button>
+      <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:6px;">No items</div>
     </td></tr>`;
-    document.getElementById('bom-grand-total').textContent = grandTotal ? fmtCost(grandTotal) : '$—';
-    renderBomStats(bomItems.length, grandTotal, countReceived, countOrdered, countNotOrdered, countOther);
+    document.getElementById('bom-grand-total').textContent = fmtCost(grandSpent);
+    const pt = document.getElementById('bom-projected-total');
+    if(pt) pt.textContent = fmtCost(grandProjected);
+    renderBomStats(bomItems.length, grandProjected, grandSpent, countReceived, countOrdered, countNotOrdered);
     return;
   }
 
@@ -3744,45 +3697,72 @@ function renderBom(){
   let html = '';
   for(const cat of categories){
     const catItems = groups[cat];
-    const catTotal = catItems.reduce((s,i)=>(s+(parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)),0);
+    const catProjected = catItems.reduce((s,i)=>(s+(parseFloat(i.unitCost)||0)*(parseInt(i.qty)||0)),0);
+    const catSpent = catItems.reduce((s,i)=>{
+      const spentQty = (parseInt(i.qtyOrdered)||0)+(parseInt(i.qtyShipped)||0)+(parseInt(i.qtyReceived)||0);
+      return s + spentQty * (parseFloat(i.unitCost)||0);
+    },0);
     const isCollapsed = bomCollapsed.has(cat);
-    const chevron = isCollapsed ? '▶' : '▼';
+
     html += `<tr class="bom-cat-header" onclick="toggleBomCat('${cat.replace(/'/g,"\\'")}')">
       <td colspan="9" style="padding:8px 12px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent2);font-weight:700;background:rgba(6,182,212,.06);">
-        <span class="bom-cat-chevron ${isCollapsed?'collapsed':''}">${chevron}</span>${cat}
-        <span style="color:var(--text-muted);font-weight:400;margin-left:8px;">${catItems.length} items · ${fmtCost(catTotal)}</span>
+        <span class="bom-cat-chevron ${isCollapsed?'collapsed':''}">▼</span>${cat}
+        <span style="color:var(--text-muted);font-weight:400;margin-left:8px;">${catItems.length} items</span>
+        <span style="color:var(--text-muted);font-weight:400;margin-left:8px;">projected: ${fmtCost(catProjected)}</span>
+        <span style="color:var(--green);font-weight:400;margin-left:6px;">spent: ${fmtCost(catSpent)}</span>
       </td><td style="background:rgba(6,182,212,.06);"></td></tr>`;
+
     if(!isCollapsed){
       for(const item of catItems){
-      const cost = parseFloat(item.unitCost)||0;
-      const qty = parseInt(item.qty)||0;
-      const total = cost && qty ? cost*qty : 0;
-      const ps = item.procStatus || 'Not ordered';
-      const latestNote = (item.notesLog&&item.notesLog.length) ? item.notesLog[item.notesLog.length-1].text : (item.notes||'');
-      const vendorStr = item.vendor ? `<span style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${item.vendor}</span>` : `<span style="color:var(--text-muted);font-size:11px;">—</span>`;
-      const leadStr = item.leadTime ? `<span style="font-family:var(--mono);font-size:11px;">${item.leadTime}</span>` : `<span style="color:var(--text-muted);font-size:11px;">—</span>`;
-      const linkedId = item.linkedTaskId || BOM_CATEGORY_TASK_MAP[item.category] || null;
-      const linkedTask = linkedId ? tasks.find(t=>t.id===String(linkedId)) : null;
-      const linkedBadge = linkedTask ? `<span style="font-size:9px;font-family:var(--mono);color:var(--accent);background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:3px;padding:1px 5px;margin-left:6px;cursor:pointer;" onclick="event.stopPropagation();openEdit('${linkedId}')" title="Open task #${linkedId}">#${linkedId}</span>` : '';
-      const partSub = item.partNumber ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;font-family:var(--mono);">${item.partNumber}</div>` : '';
-      html += `<tr style="cursor:pointer" onclick="openEditBomItem(${item.id})">
-        <td class="task-id" style="color:var(--text-muted);font-size:11px;font-family:var(--mono);">${item.id}</td>
-        <td class="task-name">${item.task}${linkedBadge}${partSub}${latestNote?`<div style="font-size:10px;color:var(--text-muted);margin-top:2px;line-height:1.4">${latestNote}</div>`:''}</td>
-        <td><span class="owner-badge ${ownerClass(item.owner||'Unassigned')}">${item.owner||'—'}</span></td>
-        <td>${vendorStr}</td>
-        <td><span class="status-badge" style="${procStatusClass(ps)};cursor:pointer" onclick="event.stopPropagation();cycleBomStatus(${item.id})">${ps}</span></td>
-        <td style="text-align:center;">${leadStr}</td>
-        <td style="text-align:right;font-family:var(--mono);font-size:11px">${cost?fmtCost(cost):'<span style="color:var(--text-muted)">—</span>'}</td>
-        <td style="text-align:center;font-family:var(--mono);font-size:11px">${qty||'—'}</td>
-        <td style="text-align:right;font-family:var(--mono);font-size:11px">${total?fmtCost(total):'<span style="color:var(--text-muted)">—</span>'}</td>
-        <td><button class="delete-btn" onclick="event.stopPropagation();deleteBomItem(${item.id})" title="Delete">x</button></td>
-      </tr>`;
-      } // end if(!isCollapsed)
+        const qty = parseInt(item.qty)||0;
+        const cost = parseFloat(item.unitCost)||0;
+        const projected = qty * cost;
+        const qr = parseInt(item.qtyReceived)||0;
+        const qs = parseInt(item.qtyShipped)||0;
+        const qo = parseInt(item.qtyOrdered)||0;
+        const qq = parseInt(item.qtyQuoted)||0;
+        const qNone = Math.max(0, qty - qq - qo - qs - qr);
+        const spent = (qo + qs + qr) * cost;
+
+        // Pipeline segments
+        let pipeline = '<div class="pipeline-bar">';
+        if(qNone > 0) pipeline += `<span class="pipeline-seg seg-none">${qNone} not ordered</span>`;
+        if(qq > 0) pipeline += `<span class="pipeline-seg seg-quoted" onclick="event.stopPropagation();advancePipeline('${item.id}','quoted')" title="Click to advance to Ordered">${qq} quoted</span>`;
+        if(qo > 0) pipeline += `<span class="pipeline-seg seg-ordered" onclick="event.stopPropagation();advancePipeline('${item.id}','ordered')" title="Click to advance to Shipped">${qo} ordered</span>`;
+        if(qs > 0) pipeline += `<span class="pipeline-seg seg-shipped" onclick="event.stopPropagation();advancePipeline('${item.id}','shipped')" title="Click to advance to Received">${qs} shipped</span>`;
+        if(qr > 0) pipeline += `<span class="pipeline-seg seg-received" style="cursor:default">${qr} received</span>`;
+        if(qty === 0) pipeline += `<span class="pipeline-seg seg-none">—</span>`;
+        pipeline += '</div>';
+
+        const linkedId = item.linkedTaskId || BOM_CATEGORY_TASK_MAP[item.category] || null;
+        const linkedTask = linkedId ? tasks.find(t=>t.id===String(linkedId)) : null;
+        const linkedBadge = linkedTask ? `<span style="font-size:9px;font-family:var(--mono);color:var(--accent);background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:3px;padding:1px 5px;margin-left:6px;cursor:pointer;" onclick="event.stopPropagation();openEdit('${linkedId}')" title="Open task #${linkedId}">#${linkedId}</span>` : '';
+        const partSub = item.partNumber ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;font-family:var(--mono);">${item.partNumber}</div>` : '';
+        const latestNote = (item.notesLog&&item.notesLog.length) ? item.notesLog[item.notesLog.length-1].text : (item.notes||'');
+        const vendorStr = item.vendor ? `<span style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${item.vendor}</span>` : `<span style="color:var(--text-muted);font-size:11px;">—</span>`;
+        const leadStr = item.leadTime ? `<span style="font-family:var(--mono);font-size:11px;">${item.leadTime}</span>` : `<span style="color:var(--text-muted)">—</span>`;
+
+        html += `<tr style="cursor:pointer" onclick="openEditBomItem('${item.id}')">
+          <td class="task-id" style="font-size:11px;font-family:var(--mono);color:var(--text-muted);">${item.id}</td>
+          <td class="task-name">${item.task}${linkedBadge}${partSub}${latestNote?`<div style="font-size:10px;color:var(--text-muted);margin-top:2px;line-height:1.4">${latestNote}</div>`:''}</td>
+          <td><span class="owner-badge ${ownerClass(item.owner||'Unassigned')}">${item.owner||'—'}</span></td>
+          <td>${vendorStr}</td>
+          <td style="text-align:center;">${leadStr}</td>
+          <td onclick="event.stopPropagation()">${pipeline}</td>
+          <td style="text-align:right;font-family:var(--mono);font-size:11px">${cost?fmtCost(cost):'<span style="color:var(--text-muted)">—</span>'}</td>
+          <td style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--text-dim)">${projected?fmtCost(projected):'—'}</td>
+          <td style="text-align:right;font-family:var(--mono);font-size:11px;color:${spent?'var(--green)':'var(--text-muted)'}">${spent?fmtCost(spent):'—'}</td>
+          <td><button class="delete-btn" onclick="event.stopPropagation();deleteBomItem('${item.id}')" title="Delete">✕</button></td>
+        </tr>`;
+      }
     }
   }
+
   body.innerHTML = html;
-  document.getElementById('bom-grand-total').textContent = grandTotal ? fmtCost(grandTotal) : '$—';
-  renderBomStats(bomItems.length, grandTotal, countReceived, countOrdered, countNotOrdered, countOther);
+  document.getElementById('bom-grand-total').textContent = fmtCost(grandSpent);
+  const pt = document.getElementById('bom-projected-total');
+  if(pt) pt.textContent = fmtCost(grandProjected);
+  renderBomStats(bomItems.length, grandProjected, grandSpent, countReceived, countOrdered, countNotOrdered);
 }
 
 function toggleBomCat(cat){
@@ -3791,26 +3771,103 @@ function toggleBomCat(cat){
   renderBom();
 }
 
-function renderBomStats(total, budget, received, ordered, notOrdered, other){
+function renderBomStats(total, projected, spent, received, ordered, notOrdered){
   const el = document.getElementById('bom-stats');
   if(!el) return;
   el.innerHTML = `
-    <div class="stat-card" style="--card-accent:var(--green)"><div class="stat-label">Total BOM Cost</div><div class="stat-value" style="font-size:20px">${budget?fmtCost(budget):'$—'}</div><div class="stat-sub">${total} line items</div></div>
-    <div class="stat-card" style="--card-accent:var(--accent2)"><div class="stat-label">Received</div><div class="stat-value">${received}</div><div class="stat-sub">of ${total} items (${total?Math.round(received/total*100):0}%)</div></div>
-    <div class="stat-card" style="--card-accent:var(--amber)"><div class="stat-label">Ordered / In Progress</div><div class="stat-value">${ordered}</div><div class="stat-sub">procurement active</div></div>
-    <div class="stat-card" style="--card-accent:var(--red)"><div class="stat-label">Not Ordered / Quoted</div><div class="stat-value">${notOrdered}</div><div class="stat-sub">pending procurement</div></div>`;
+    <div class="stat-card" style="--card-accent:var(--text-muted)"><div class="stat-label">Projected Cost</div><div class="stat-value" style="font-size:20px">${projected?fmtCost(projected):'$—'}</div><div class="stat-sub">${total} line items total</div></div>
+    <div class="stat-card" style="--card-accent:var(--green)"><div class="stat-label">Amount Spent</div><div class="stat-value" style="font-size:20px;color:var(--green)">${spent?fmtCost(spent):'$—'}</div><div class="stat-sub">ordered or further</div></div>
+    <div class="stat-card" style="--card-accent:var(--accent2)"><div class="stat-label">Fully Received</div><div class="stat-value">${received}</div><div class="stat-sub">of ${total} items</div></div>
+    <div class="stat-card" style="--card-accent:var(--amber)"><div class="stat-label">Ordered / In Transit</div><div class="stat-value">${ordered}</div><div class="stat-sub">procurement active</div></div>`;
 }
 
-function cycleBomStatus(id){
-  const item = bomItems.find(i=>i.id===id);
+// ===== PIPELINE ADVANCE =====
+const PIPELINE_STAGES = ['none','quoted','ordered','shipped','received'];
+const PIPELINE_NEXT = { none:'quoted', quoted:'ordered', ordered:'shipped', shipped:'received' };
+const PIPELINE_LABELS = { none:'Not Ordered', quoted:'Quoted', ordered:'Ordered', shipped:'Shipped', received:'Received' };
+
+function advancePipeline(id, fromStage){
+  const item = bomItems.find(i=>String(i.id)===String(id));
   if(!item) return;
-  const statuses = ['Not ordered','Quoted','In progress','Ordered','Partial','Received','On hold','Cancelled'];
-  const idx = statuses.indexOf(item.procStatus||'Not ordered');
-  item.procStatus = statuses[(idx+1)%statuses.length];
+  if(!canEditBom() && fbConfig.user !== item.owner){
+    showToast('Only Linda, Makoto, and Priyanka can update procurement status.', 'amber');
+    return;
+  }
+  const toStage = PIPELINE_NEXT[fromStage];
+  if(!toStage) return;
+  const fromKey = fromStage === 'none' ? null : `qty${fromStage.charAt(0).toUpperCase()+fromStage.slice(1)}`;
+  const toKey = `qty${toStage.charAt(0).toUpperCase()+toStage.slice(1)}`;
+  const availQty = fromStage === 'none'
+    ? Math.max(0,(item.qty||0)-(item.qtyQuoted||0)-(item.qtyOrdered||0)-(item.qtyShipped||0)-(item.qtyReceived||0))
+    : (item[fromKey]||0);
+  if(availQty <= 0) return;
+
+  // Remove any existing popup
+  const existing = document.getElementById('pipeline-popup');
+  if(existing) existing.remove();
+
+  const popup = document.createElement('div');
+  popup.id = 'pipeline-popup';
+  popup.className = 'pipeline-popup';
+  popup.innerHTML = `
+    <h4>Advance Pipeline</h4>
+    <div class="pp-desc">Move from <strong>${PIPELINE_LABELS[fromStage]}</strong> → <strong>${PIPELINE_LABELS[toStage]}</strong><br>
+    <span style="font-size:12px;color:var(--text-muted)">${item.task}</span></div>
+    <div class="pp-input">
+      <span style="font-size:12px;color:var(--text-muted)">Qty:</span>
+      <input type="number" id="pipeline-qty-input" min="1" max="${availQty}" value="${availQty}" style="width:80px;">
+      <span style="font-size:12px;color:var(--text-muted)">of ${availQty}</span>
+    </div>
+    <div class="pp-btns">
+      <button class="btn-primary" onclick="confirmAdvancePipeline('${id}','${fromStage}','${toStage}',${availQty})" style="flex:1;">Confirm</button>
+      <button class="btn-secondary" onclick="document.getElementById('pipeline-popup').remove()">Cancel</button>
+    </div>`;
+
+  // Position near mouse
+  popup.style.top = (window.innerHeight/2 - 120) + 'px';
+  popup.style.left = (window.innerWidth/2 - 140) + 'px';
+  document.body.appendChild(popup);
+  document.getElementById('pipeline-qty-input').focus();
+  document.getElementById('pipeline-qty-input').select();
+}
+
+function confirmAdvancePipeline(id, fromStage, toStage, maxQty){
+  const item = bomItems.find(i=>String(i.id)===String(id));
+  if(!item) return;
+  const inputEl = document.getElementById('pipeline-qty-input');
+  let qty = parseInt(inputEl ? inputEl.value : maxQty) || maxQty;
+  qty = Math.min(qty, maxQty);
+  if(qty <= 0) return;
+
+  const fromKey = fromStage === 'none' ? null : `qty${fromStage.charAt(0).toUpperCase()+fromStage.slice(1)}`;
+  const toKey = `qty${toStage.charAt(0).toUpperCase()+toStage.slice(1)}`;
+
+  if(fromKey) item[fromKey] = Math.max(0, (item[fromKey]||0) - qty);
+  item[toKey] = (item[toKey]||0) + qty;
+
+  // Remove popup
+  const popup = document.getElementById('pipeline-popup');
+  if(popup) popup.remove();
+
   saveBom(); renderBom();
+  showToast(`✓ ${qty}× ${item.task}<br><span style="font-size:11px;color:var(--text-muted)">${PIPELINE_LABELS[fromStage]} → ${PIPELINE_LABELS[toStage]}</span>`, 'green', 3000);
+}
+
+// Close popup on outside click
+document.addEventListener('click', e=>{
+  const popup = document.getElementById('pipeline-popup');
+  if(popup && !popup.contains(e.target)) popup.remove();
+});
+
+function canEditBom(){
+  return isAdmin || fbConfig.user === 'Linda';
 }
 
 function openAddBomItem(){
+  if(!canEditBom()){
+    showToast('Only Linda, Makoto, and Priyanka can add BOM items.', 'amber');
+    return;
+  }
   editingBomId = null;
   document.getElementById('bom-modal-title').textContent = 'Add BOM Item';
   document.getElementById('bom-modal-name').value = '';
@@ -3824,7 +3881,10 @@ function openAddBomItem(){
   document.getElementById('bom-modal-partnum').value = '';
   document.getElementById('bom-modal-qty').value = '1';
   document.getElementById('bom-modal-unitcost').value = '';
-  document.getElementById('bom-modal-status').value = 'Not ordered';
+  document.getElementById('bom-modal-qty-quoted').value = '';
+  document.getElementById('bom-modal-qty-ordered').value = '';
+  document.getElementById('bom-modal-qty-shipped').value = '';
+  document.getElementById('bom-modal-qty-received').value = '';
   document.getElementById('bom-modal-leadtime').value = '';
   document.getElementById('bom-modal-notes').value = '';
   document.getElementById('bom-modal-linked-task').value = '';
@@ -3834,10 +3894,19 @@ function openAddBomItem(){
 }
 
 function openEditBomItem(id){
-  const item = bomItems.find(i=>i.id===id || i.id===Number(id));
+  const item = bomItems.find(i=>String(i.id)===String(id));
   if(!item) return;
-  editingBomId = item.id;
-  document.getElementById('bom-modal-title').textContent = `Edit BOM Item #${item.id}`;
+  // Everyone can open to view, but only admins/Linda can edit fields
+  const readOnly = !canEditBom();
+  editingBomId = canEditBom() ? item.id : null;
+  document.getElementById('bom-modal-title').textContent = readOnly ? `BOM Item #${item.id}` : `Edit BOM Item #${item.id}`;
+  // Disable all inputs if read-only
+  const inputs = document.querySelectorAll('#bom-modal input, #bom-modal select, #bom-modal textarea');
+  inputs.forEach(el => el.disabled = readOnly);
+  document.getElementById('bom-modal-delete').style.display = readOnly ? 'none' : 'inline-flex';
+  // Hide save button for read-only
+  const saveBtn = document.querySelector('#bom-modal .btn-primary');
+  if(saveBtn) saveBtn.style.display = readOnly ? 'none' : '';
   document.getElementById('bom-modal-name').value = item.task||'';
   document.getElementById('bom-modal-description').value = item.description||'';
   // Set category — if it's a custom one not in the list, show it in the new field
@@ -3857,10 +3926,13 @@ function openEditBomItem(id){
   document.getElementById('bom-modal-manufacturer').value = item.manufacturer||'';
   document.getElementById('bom-modal-vendor').value = item.vendor||'';
   document.getElementById('bom-modal-partnum').value = item.partNumber||'';
-  document.getElementById('bom-modal-qty').value = item.qty||1;
+  document.getElementById('bom-modal-qty').value = item.qty||0;
   document.getElementById('bom-modal-unitcost').value = item.unitCost||'';
+  document.getElementById('bom-modal-qty-quoted').value = item.qtyQuoted||0;
+  document.getElementById('bom-modal-qty-ordered').value = item.qtyOrdered||0;
+  document.getElementById('bom-modal-qty-shipped').value = item.qtyShipped||0;
+  document.getElementById('bom-modal-qty-received').value = item.qtyReceived||0;
   updateBomModalTotal();
-  document.getElementById('bom-modal-status').value = item.procStatus||'Not ordered';
   document.getElementById('bom-modal-leadtime').value = item.leadTime||'';
   document.getElementById('bom-modal-notes').value = item.notes||'';
   document.getElementById('bom-modal-linked-task').value = item.linkedTaskId || BOM_CATEGORY_TASK_MAP[item.category] || '';
@@ -3907,28 +3979,35 @@ function saveBomItem(){
     manufacturer: document.getElementById('bom-modal-manufacturer').value.trim(),
     vendor: document.getElementById('bom-modal-vendor').value.trim(),
     partNumber: document.getElementById('bom-modal-partnum').value.trim(),
-    qty: Number(document.getElementById('bom-modal-qty').value)||1,
+    qty: Number(document.getElementById('bom-modal-qty').value)||0,
     unitCost: Number(document.getElementById('bom-modal-unitcost').value)||0,
-    procStatus: document.getElementById('bom-modal-status').value || 'Not ordered',
+    qtyQuoted: Number(document.getElementById('bom-modal-qty-quoted').value)||0,
+    qtyOrdered: Number(document.getElementById('bom-modal-qty-ordered').value)||0,
+    qtyShipped: Number(document.getElementById('bom-modal-qty-shipped').value)||0,
+    qtyReceived: Number(document.getElementById('bom-modal-qty-received').value)||0,
+    procStatus: null, // legacy field kept for Power Automate compat
     leadTime: document.getElementById('bom-modal-leadtime').value.trim(),
     notes: document.getElementById('bom-modal-notes').value.trim(),
     linkedTaskId: document.getElementById('bom-modal-linked-task').value.trim() || null,
     notesLog: existing ? (existing.notesLog||[]) : []
   };
   if(editingBomId !== null){
-    const idx = bomItems.findIndex(i=>i.id===editingBomId);
+    const idx = bomItems.findIndex(i=>String(i.id)===String(editingBomId));
     if(idx>=0) bomItems[idx] = item;
   } else {
+    item.isNew = true;
+    item.addedBy = fbConfig.user;
+    item.addedAt = new Date().toISOString();
     bomItems.push(item);
   }
   saveBom(); closeBomModal(); renderBom();
 }
 
 function deleteBomItem(id){
-  const tid = (id !== undefined) ? id : editingBomId;
-  if(tid === null || tid === undefined) return;
+  const tid = (id !== undefined) ? String(id) : String(editingBomId);
+  if(!tid) return;
   if(!confirm('Delete this BOM item?')) return;
-  bomItems = bomItems.filter(i=>i.id!==tid && i.id!==Number(tid));
+  bomItems = bomItems.filter(i=>String(i.id)!==tid);
   if(editingBomId !== null) closeBomModal();
   saveBom(); renderBom();
 }
@@ -4030,8 +4109,20 @@ function updateModalTotal(){
 function updateBomModalTotal(){
   const cost = parseFloat(document.getElementById('bom-modal-unitcost').value)||0;
   const qty = parseInt(document.getElementById('bom-modal-qty').value)||0;
-  const el = document.getElementById('bom-modal-total');
-  if(el) el.textContent = cost && qty ? fmtCost(cost*qty) : '—';
+  const qo = parseInt(document.getElementById('bom-modal-qty-ordered')?.value)||0;
+  const qs = parseInt(document.getElementById('bom-modal-qty-shipped')?.value)||0;
+  const qr = parseInt(document.getElementById('bom-modal-qty-received')?.value)||0;
+  const qq = parseInt(document.getElementById('bom-modal-qty-quoted')?.value)||0;
+  const projected = document.getElementById('bom-modal-total');
+  const spent = document.getElementById('bom-modal-spent');
+  if(projected) projected.textContent = cost && qty ? fmtCost(cost*qty) : '—';
+  if(spent) spent.textContent = cost && (qo+qs+qr) > 0 ? fmtCost(cost*(qo+qs+qr)) : '—';
+  // Warn if pipeline exceeds total qty
+  const warning = document.getElementById('bom-modal-qty-warning');
+  if(warning){
+    const pipelineTotal = qq+qo+qs+qr;
+    warning.style.display = (qty > 0 && pipelineTotal > qty) ? 'block' : 'none';
+  }
 }
 
 // ---- EXPORT ----
