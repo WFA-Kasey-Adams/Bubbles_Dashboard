@@ -1271,21 +1271,21 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
       </div>
       <div style="border:1px solid var(--border);border-radius:8px;padding:14px;background:var(--surface2);">
         <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent2);margin-bottom:10px;">Procurement Pipeline <span style="color:var(--text-muted);font-weight:400;">(qty at each stage)</span></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="field-group">
-            <div class="field-label" style="color:#d8b4fe;">Quoted</div>
+            <div class="field-label" style="color:#d8b4fe;">🟣 Quoted</div>
             <input class="field-input" id="bom-modal-qty-quoted" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
           </div>
           <div class="field-group">
-            <div class="field-label" style="color:#93c5fd;">Ordered</div>
+            <div class="field-label" style="color:#93c5fd;">🔵 Ordered</div>
             <input class="field-input" id="bom-modal-qty-ordered" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
           </div>
           <div class="field-group">
-            <div class="field-label" style="color:var(--amber);">Shipped</div>
+            <div class="field-label" style="color:var(--amber);">🟡 Shipped</div>
             <input class="field-input" id="bom-modal-qty-shipped" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
           </div>
           <div class="field-group">
-            <div class="field-label" style="color:#6ee7b7;">Received</div>
+            <div class="field-label" style="color:#6ee7b7;">🟢 Received</div>
             <input class="field-input" id="bom-modal-qty-received" type="number" min="0" step="1" placeholder="0" oninput="updateBomModalTotal()">
           </div>
         </div>
@@ -3900,12 +3900,11 @@ function openEditBomItem(id){
   const readOnly = !canEditBom();
   editingBomId = canEditBom() ? item.id : null;
   document.getElementById('bom-modal-title').textContent = readOnly ? `BOM Item #${item.id}` : `Edit BOM Item #${item.id}`;
-  // Disable all inputs if read-only
+  // Only disable inputs if truly read-only
   const inputs = document.querySelectorAll('#bom-modal input, #bom-modal select, #bom-modal textarea');
   inputs.forEach(el => el.disabled = readOnly);
   document.getElementById('bom-modal-delete').style.display = readOnly ? 'none' : 'inline-flex';
-  // Hide save button for read-only
-  const saveBtn = document.querySelector('#bom-modal .btn-primary');
+  const saveBtn = document.querySelector('#bom-modal .modal-footer .btn-primary');
   if(saveBtn) saveBtn.style.display = readOnly ? 'none' : '';
   document.getElementById('bom-modal-name').value = item.task||'';
   document.getElementById('bom-modal-description').value = item.description||'';
