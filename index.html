@@ -1162,6 +1162,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
           <option value="">All Categories</option>
         </select>
       </div>
+      <button class="toolbar-btn" onclick="resetBomToSeed()" style="color:var(--amber);border-color:rgba(245,158,11,.3);">↺ Reset to seed data</button>
       <button class="toolbar-btn" onclick="openAddBomItem()" id="bom-add-btn" style="color:var(--green);border-color:rgba(16,185,129,.3);display:none;"><span class="icon">＋</span> Add component</button>
     </div>
     <div style="overflow-x:auto;">
@@ -3868,6 +3869,17 @@ document.addEventListener('click', e=>{
   const popup = document.getElementById('pipeline-popup');
   if(popup && !popup.contains(e.target)) popup.remove();
 });
+
+function resetBomToSeed(){
+  if(!confirm('Reset BOM to seed data from spreadsheet? This will overwrite any local changes.')) return;
+  bomItems = JSON.parse(JSON.stringify(BOM_SEED_DATA));
+  BOM_IDS = [];
+  // Clear all BOM localStorage keys
+  Object.keys(localStorage).filter(k=>k.includes('bom')).forEach(k=>localStorage.removeItem(k));
+  saveBom();
+  renderBom();
+  showToast('✓ BOM reset to seed data from spreadsheet', 'green', 3000);
+}
 
 function canEditBom(){
   return isAdmin || fbConfig.user === 'Linda';
