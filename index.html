@@ -2253,6 +2253,7 @@ function openEdit(id){
   document.getElementById('modal-task').value = t.task;
   document.getElementById('modal-ws').value = t.workStream;
   document.getElementById('modal-owner').value = t.owner||'Unassigned';
+  document.getElementById('modal-owner').disabled = !canAssignToOthers();
   document.getElementById('modal-status').value = t.status||'Not Started';
   document.getElementById('modal-vendor').value = t.vendor||'';
   document.getElementById('modal-proc-status').value = t.procStatus||'';
@@ -2276,12 +2277,26 @@ function openEdit(id){
   setTimeout(()=>document.getElementById('modal-task').focus(),100);
 }
 
+const TASK_CREATORS_ANY = ['Makoto','Priyanka','Linda']; // can assign to anyone
+
+function canAssignToOthers(){
+  return isAdmin || TASK_CREATORS_ANY.includes(fbConfig.user);
+}
+
 function openAddTask(ws=''){
   editingId = null;
   document.getElementById('modal-title-label').textContent = 'Add New Task';
   document.getElementById('modal-task').value = '';
-  document.getElementById('modal-ws').value = ws;
-  document.getElementById('modal-owner').value = 'Unassigned';
+  document.getElementById('modal-ws').value = ws || '';
+  // Permission: admins/Linda can assign to anyone, others locked to self
+  const ownerSel = document.getElementById('modal-owner');
+  if(canAssignToOthers()){
+    ownerSel.value = fbConfig.user || 'Unassigned';
+    ownerSel.disabled = false;
+  } else {
+    ownerSel.value = fbConfig.user || 'Unassigned';
+    ownerSel.disabled = true;
+  }
   document.getElementById('modal-status').value = 'Not Started';
   document.getElementById('modal-vendor').value = '';
   document.getElementById('modal-proc-status').value = '';
@@ -2289,7 +2304,7 @@ function openAddTask(ws=''){
   document.getElementById('modal-qty').value = '';
   document.getElementById('modal-total-cost').textContent = '—';
   document.getElementById('modal-blockers').value = '';
-  setBomToggle(false);
+  setBomToggle(fbConfig.user === 'Linda');
   renderNotesLog([]);
   document.getElementById('modal-delete-btn').style.display = 'none';
   const wsList = document.getElementById('ws-list');
@@ -3104,11 +3119,9 @@ function addBlockerNotification(blockedTask, resolvedTaskId){
 }
 
 function checkAndUnblockTasks(completedTaskId){
-  // Find all tasks that had this task as a blocker
   let anyUnblocked = false;
   for(const t of tasks){
     if(!t.blockers || !t.blockers.includes(String(completedTaskId))) continue;
-    // Check if ALL blockers are now complete
     const remainingBlockers = t.blockers.filter(bid => {
       const blocker = tasks.find(b => b.id === String(bid));
       return blocker && blocker.status !== 'Complete';
@@ -3117,11 +3130,15 @@ function checkAndUnblockTasks(completedTaskId){
       t.status = 'In Progress';
       anyUnblocked = true;
       addBlockerNotification(t, completedTaskId);
-      // Show toast if the owner is currently logged in
-      if(fbConfig.user === t.owner){
-        showToast(`🔓 <strong>Your task is unblocked!</strong><br>"${t.task}"<br><span style="color:var(--text-muted);font-size:11px;">All blockers resolved — now In Progress</span>`, 'green', 6000);
+      // Always show toast — compare case-insensitively
+      if(fbConfig.user && t.owner && fbConfig.user.toLowerCase() === t.owner.toLowerCase()){
+        showToast(`🔓 <strong>Your task is unblocked!</strong><br>"${t.task}"<br><span style="color:var(--text-muted);font-size:11px;">All blockers cleared — now In Progress</span>`, 'green', 6000);
       }
     }
+  }
+  if(anyUnblocked){
+    save();
+    renderAll();
   }
   return anyUnblocked;
 }
@@ -3194,7 +3211,11 @@ function renderWorkStreamView(ws) {
       const checkClass = t.status==='Complete'?'checked':t.status==='In Progress'?'inprogress':t.status==='Blocked'?'blocked':'';
       const checkIcon = t.status==='Complete'?'✓':t.status==='Blocked'?'!':'';
       const canEditWs = isAdmin || t.owner === fbConfig.user;
-      return `<div class="mytask-card ${t.status==='Complete'?'is-complete':''} ${t.status==='Blocked'?'is-blocked':''}" onclick="${canEditWs?`openEdit('${t.id}')`:''}" style="${!canEditWs?'cursor:default;':''}">
+      const statusColors = {'Complete':'var(--green)','In Progress':'var(--amber)','Blocked':'var(--red)','Not Started':'var(--border)'};
+      const borderColor = statusColors[t.status] || 'var(--border)';
+      return `<div class="mytask-card ${t.status==='Complete'?'is-complete':''} ${t.status==='Blocked'?'is-blocked':''}"
+        style="border-left:4px solid ${borderColor};"
+        onclick="${canEditWs?`openEdit('${t.id}')`:''}" style="${!canEditWs?'cursor:default;':''}">
         <div class="mytask-check ${checkClass}" onclick="event.stopPropagation();${canEditWs?`wsQuickCycle('${t.id}','${wsId}')`:''}">${checkIcon}</div>
         <div class="mytask-body">
           <div class="mytask-name ${t.status==='Complete'?'strike':''}">${t.task}</div>
@@ -3205,11 +3226,14 @@ function renderWorkStreamView(ws) {
           </div>
           ${t.notes?`<div class="mytask-notes">${t.notes}</div>`:''}
         </div>
-        ${canEditWs ? `<div class="mytask-status-row" onclick="event.stopPropagation()">
-          <button class="mytask-status-btn msb-notstarted" onclick="wsSetStatus('${t.id}','Not Started','${wsId}')" style="${!t.status||t.status==='Not Started'?'outline:1px solid var(--text-muted);':''}">Not Started</button>
-          <button class="mytask-status-btn msb-inprogress" onclick="wsSetStatus('${t.id}','In Progress','${wsId}')" style="${t.status==='In Progress'?'outline:1px solid var(--amber);':''}">In Progress</button>
-          <button class="mytask-status-btn msb-blocked" onclick="wsSetStatus('${t.id}','Blocked','${wsId}')" style="${t.status==='Blocked'?'outline:1px solid var(--red);':''}">Blocked</button>
-          <button class="mytask-status-btn msb-complete" onclick="wsSetStatus('${t.id}','Complete','${wsId}')" style="${t.status==='Complete'?'outline:1px solid var(--green);':''}">✓ Done</button>
+        ${canEditWs ? `<div onclick="event.stopPropagation()">
+          <select class="inline-select" style="background:var(--surface2);border:1px solid ${borderColor};border-radius:6px;color:var(--text);font-family:var(--sans);font-size:11px;padding:4px 8px;cursor:pointer;outline:none;"
+            onchange="wsSetStatus('${t.id}',this.value,'${wsId}')">
+            <option value="Not Started" ${!t.status||t.status==='Not Started'?'selected':''}>Not Started</option>
+            <option value="In Progress" ${t.status==='In Progress'?'selected':''}>In Progress</option>
+            <option value="Blocked" ${t.status==='Blocked'?'selected':''}>Blocked</option>
+            <option value="Complete" ${t.status==='Complete'?'selected':''}>✓ Done</option>
+          </select>
         </div>` : `<span class="status-badge ${statusClass(t.status)}" style="cursor:default;flex-shrink:0;">${statusLabel(t.status)}</span>`}
       </div>`;
     }).join('');
@@ -3344,7 +3368,17 @@ function renderMyTasks(canEdit) {
       const blockerBadge = activeBlockers.length > 0
         ? `<div style="font-size:10px;color:var(--red);margin-top:3px;">🔒 Blocked by: ${activeBlockers.map(bid=>{const b=tasks.find(bt=>bt.id===String(bid));return b?`#${bid} ${b.task}`:`#${bid}`;}).join(', ')}</div>`
         : blockers.length > 0 ? `<div style="font-size:10px;color:var(--green);margin-top:3px;">🔓 All blockers resolved</div>` : '';
-      return `<div class="mytask-card ${t.status==='Complete'?'is-complete':''} ${t.status==='Blocked'?'is-blocked':''}" onclick="${isOwn||isAdmin?`openEdit('${t.id}')`:''}" style="${!isOwn&&!isAdmin?'cursor:default;':''}">
+      const statusColors = {
+        'Complete': 'var(--green)',
+        'In Progress': 'var(--amber)',
+        'Blocked': 'var(--red)',
+        'Not Started': 'var(--border)'
+      };
+      const borderColor = statusColors[t.status] || 'var(--border)';
+      return `<div class="mytask-card ${t.status==='Complete'?'is-complete':''} ${t.status==='Blocked'?'is-blocked':''}" 
+        style="border-left:4px solid ${borderColor};"
+        onclick="${isOwn||isAdmin?`openEdit('${t.id}')`:''}" 
+        style="${!isOwn&&!isAdmin?'cursor:default;':''}">
         <div class="mytask-check ${checkClass}" onclick="event.stopPropagation();${isOwn||isAdmin?`quickCycleStatus('${t.id}')`:''}" title="${isOwn||isAdmin?'Click to cycle status':'Read only'}">${checkIcon}</div>
         <div class="mytask-body">
           <div class="mytask-name ${t.status==='Complete'?'strike':''}">${t.task}</div>
@@ -3356,11 +3390,14 @@ function renderMyTasks(canEdit) {
           ${blockerBadge}
           ${t.notes ? `<div class="mytask-notes">${t.notes}</div>` : ''}
         </div>
-        ${isOwn||isAdmin ? `<div class="mytask-status-row" onclick="event.stopPropagation()">
-          <button class="mytask-status-btn msb-notstarted" onclick="setMyTaskStatus('${t.id}','Not Started')" style="${t.status==='Not Started'||!t.status?'outline:1px solid var(--text-muted);':''}">Not Started</button>
-          <button class="mytask-status-btn msb-inprogress" onclick="setMyTaskStatus('${t.id}','In Progress')" style="${t.status==='In Progress'?'outline:1px solid var(--amber);':''}">In Progress</button>
-          <button class="mytask-status-btn msb-blocked" onclick="setMyTaskStatus('${t.id}','Blocked')" style="${t.status==='Blocked'?'outline:1px solid var(--red);':''}">Blocked</button>
-          <button class="mytask-status-btn msb-complete" onclick="setMyTaskStatus('${t.id}','Complete')" style="${t.status==='Complete'?'outline:1px solid var(--green);':''}">✓ Done</button>
+        ${isOwn||isAdmin ? `<div onclick="event.stopPropagation()">
+          <select class="inline-select" style="background:var(--surface2);border:1px solid ${borderColor};border-radius:6px;color:var(--text);font-family:var(--sans);font-size:11px;padding:4px 8px;cursor:pointer;outline:none;"
+            onchange="setMyTaskStatus('${t.id}',this.value)">
+            <option value="Not Started" ${t.status==='Not Started'||!t.status?'selected':''}>Not Started</option>
+            <option value="In Progress" ${t.status==='In Progress'?'selected':''}>In Progress</option>
+            <option value="Blocked" ${t.status==='Blocked'?'selected':''}>Blocked</option>
+            <option value="Complete" ${t.status==='Complete'?'selected':''}>✓ Done</option>
+          </select>
         </div>` : `<span class="status-badge ${statusClass(t.status)}" style="cursor:default;flex-shrink:0;">${statusLabel(t.status)}</span>`}
       </div>`;
     }).join('');
@@ -3388,11 +3425,10 @@ function renderMyTasks(canEdit) {
 function setMyTaskStatus(id, status) {
   const t = tasks.find(t => t.id === String(id));
   if(!t) return;
+  const prevStatus = t.status;
   t.status = status;
-  save();
-  renderMyTasks();
-  renderStats();
-  renderDashboardBreakdowns();
+  if(status === 'Complete' && prevStatus !== 'Complete') checkAndUnblockTasks(String(id));
+  save(); renderMyTasks(true); renderStats(); renderDashboardBreakdowns();
 }
 
 function quickCycleStatus(id) {
@@ -3531,7 +3567,7 @@ let bomCollapsed = new Set(); // tracks which categories are collapsed
 
 function loadBom(){
   try {
-    const saved = localStorage.getItem('bubbles_bom_v6');
+    const saved = localStorage.getItem('bubbles_bom_v7');
     if(saved){
       const parsed = JSON.parse(saved);
       bomItems = parsed.items || [];
@@ -3546,7 +3582,7 @@ function loadBom(){
 }
 
 function saveBom(){
-  localStorage.setItem('bubbles_bom_v6', JSON.stringify({items: bomItems, bomIds: BOM_IDS}));
+  localStorage.setItem('bubbles_bom_v7', JSON.stringify({items: bomItems, bomIds: BOM_IDS}));
   scheduleBomPush();
   scheduleGhBomPush();
 }
@@ -3569,14 +3605,77 @@ function scheduleBomPush(){
 async function pullBomFromFirebase(){
   try {
     const base = fbConfig.url.replace(/\/$/, '');
+
+    // Pull dashboard BOM
     const resp = await fetch(`${base}/bubbles/bom.json`);
-    if(!resp.ok) return;
-    const data = await resp.json();
-    if(data && data.items && data.items.length > 0){
-      bomItems = data.items;
-      saveBom(); renderBom();
+    if(resp.ok){
+      const data = await resp.json();
+      if(data && data.items && data.items.length > 0){
+        bomItems = data.items;
+        saveBom();
+      }
     }
+
+    // Pull Linda's Excel BOM and merge
+    const excelResp = await fetch(`${base}/bubbles/excel_bom.json`);
+    if(excelResp.ok){
+      const excelRows = await excelResp.json();
+      if(Array.isArray(excelRows) && excelRows.length > 0){
+        mergeExcelBom(excelRows);
+      }
+    }
+
+    renderBom();
   } catch(e){ console.warn('BOM pull failed', e); }
+}
+
+function mergeExcelBom(excelRows){
+  // Filter out empty rows
+  const validRows = excelRows.filter(r => r.component && r.component.trim());
+
+  for(const row of validRows){
+    const component = (row.component || '').trim();
+    if(!component) continue;
+
+    // Try to find matching item by component name
+    const existing = bomItems.find(i =>
+      i.task && i.task.toLowerCase().includes(component.toLowerCase().substring(0,15))
+    );
+
+    if(existing){
+      // Update fields from Excel — Linda owns these
+      if(row.vendor) existing.vendor = row.vendor.trim();
+      if(row.partNo) existing.partNumber = row.partNo.trim();
+      if(row.deviceUsage) existing.description = row.deviceUsage.trim();
+      if(row.qty) existing.qty = parseInt(row.qty) || existing.qty;
+      if(row.unitCost) existing.unitCost = parseFloat(row.unitCost) || existing.unitCost;
+      if(row.notes) existing.notes = row.notes.trim();
+      if(row.team) existing.owner = row.team.trim();
+      // Convert Excel serial date to readable string
+      if(row.dateOrder && !isNaN(row.dateOrder)){
+        const d = new Date((parseInt(row.dateOrder) - 25569) * 86400000);
+        existing.dateOrdered = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      }
+    } else {
+      // New item from Excel — add it to BOM
+      bomItems.push({
+        id: 'xl_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+        task: component,
+        description: (row.deviceUsage||'').trim(),
+        category: 'Unorganized',
+        owner: (row.team||'Unassigned').trim(),
+        vendor: (row.vendor||'').trim(),
+        partNumber: (row.partNo||'').trim(),
+        qty: parseInt(row.qty)||0,
+        unitCost: parseFloat(row.unitCost)||0,
+        procStatus: 'Not ordered',
+        notes: (row.notes||'').trim(),
+        notesLog: [],
+        linkedTaskId: null
+      });
+    }
+  }
+  saveBom();
 }
 
 function procStatusClass(s){
