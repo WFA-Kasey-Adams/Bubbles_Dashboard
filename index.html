@@ -3552,13 +3552,23 @@ async function pullBomFromFirebase(){
   try {
     const base = fbConfig.url.replace(/\/$/, '');
 
-    // Pull dashboard BOM
+    // Pull dashboard BOM — only use if it has pipeline data
     const resp = await fetch(`${base}/bubbles/bom.json`);
     if(resp.ok){
       const data = await resp.json();
       if(data && data.items && data.items.length > 0){
-        bomItems = data.items;
-        saveBom();
+        // Only use Firebase data if it has the new pipeline fields
+        const hasPipeline = data.items.some(i => 
+          i.qtyOrdered !== undefined || i.qtyReceived !== undefined
+        );
+        if(hasPipeline){
+          bomItems = data.items;
+          saveBom();
+        }
+        // If no pipeline fields, keep seed data and push it to Firebase
+        else {
+          saveBom(); // Push seed data up to Firebase
+        }
       }
     }
 
