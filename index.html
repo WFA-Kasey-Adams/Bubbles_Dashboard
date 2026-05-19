@@ -3735,22 +3735,13 @@ function renderBom(){
         const spent = (qo + qs + qr) * cost;
 
         const canAdvance = canEditBom() || fbConfig.user === item.owner;
-        // Pipeline segments
+        // Pipeline segments — click to advance, shift+click or long description to move back
         let pipeline = '<div class="pipeline-bar">';
         if(qNone > 0) pipeline += `<span class="pipeline-seg seg-none">${qNone} not ordered</span>`;
-        if(qq > 0) pipeline += `<span class="pipeline-seg seg-quoted" onclick="event.stopPropagation();advancePipeline('${item.id}','quoted')" title="Click to advance to Ordered">${qq} quoted</span>`;
-        if(qo > 0) pipeline += `<span class="pipeline-seg seg-ordered" onclick="event.stopPropagation();advancePipeline('${item.id}','ordered')" title="Click to advance to Shipped">${qo} ordered</span>`;
-        if(qs > 0) pipeline += `<span class="pipeline-seg seg-shipped" onclick="event.stopPropagation();advancePipeline('${item.id}','shipped')" title="Click to advance to Received">${qs} shipped</span>`;
-        if(qr > 0) pipeline += `<span class="pipeline-seg seg-received" style="cursor:default">${qr} received</span>`;
-        if(!canAdvance && (qq > 0 || qo > 0 || qs > 0)){
-          // Replace clickable segments with non-clickable for non-owners
-          pipeline = '<div class="pipeline-bar">';
-          if(qNone > 0) pipeline += `<span class="pipeline-seg seg-none">${qNone} not ordered</span>`;
-          if(qq > 0) pipeline += `<span class="pipeline-seg seg-quoted" style="cursor:default">${qq} quoted</span>`;
-          if(qo > 0) pipeline += `<span class="pipeline-seg seg-ordered" style="cursor:default">${qo} ordered</span>`;
-          if(qs > 0) pipeline += `<span class="pipeline-seg seg-shipped" style="cursor:default">${qs} shipped</span>`;
-          if(qr > 0) pipeline += `<span class="pipeline-seg seg-received" style="cursor:default">${qr} received</span>`;
-        }
+        if(qq > 0) pipeline += `<span class="pipeline-seg seg-quoted" ${canAdvance?`onclick="event.stopPropagation();advancePipeline('${item.id}','quoted')" title="→ Move to Ordered"`:'style="cursor:default"'}>${qq} quoted</span>`;
+        if(qo > 0) pipeline += `<span class="pipeline-seg seg-ordered" ${canAdvance?`onclick="event.stopPropagation();advancePipeline('${item.id}','ordered')" title="→ Move to Shipped"`:'style="cursor:default"'}>${qo} ordered</span>`;
+        if(qs > 0) pipeline += `<span class="pipeline-seg seg-shipped" ${canAdvance?`onclick="event.stopPropagation();advancePipeline('${item.id}','shipped')" title="→ Move to Received"`:'style="cursor:default"'}>${qs} shipped</span>`;
+        if(qr > 0) pipeline += `<span class="pipeline-seg seg-received" ${canAdvance?`onclick="event.stopPropagation();advancePipeline('${item.id}','received')" title="← Move back to Shipped"`:''} style="${canAdvance?'':'cursor:default'}">${qr} received</span>`;
         if(qty === 0) pipeline += `<span class="pipeline-seg seg-none">—</span>`;
         pipeline += '</div>';
 
@@ -3803,7 +3794,8 @@ function renderBomStats(total, projected, spent, received, ordered, notOrdered){
 
 // ===== PIPELINE ADVANCE =====
 const PIPELINE_STAGES = ['none','quoted','ordered','shipped','received'];
-const PIPELINE_NEXT = { none:'quoted', quoted:'ordered', ordered:'shipped', shipped:'received' };
+const PIPELINE_NEXT = { none:'quoted', quoted:'ordered', ordered:'shipped', shipped:'received', received:'shipped' };
+const PIPELINE_PREV = { quoted:'none', ordered:'quoted', shipped:'ordered', received:'shipped' };
 const PIPELINE_LABELS = { none:'Not Ordered', quoted:'Quoted', ordered:'Ordered', shipped:'Shipped', received:'Received' };
 
 function advancePipeline(id, fromStage){
@@ -3813,8 +3805,11 @@ function advancePipeline(id, fromStage){
     showToast(`Only Linda, Makoto, Priyanka, or ${item.owner} can update this item's status.`, 'amber');
     return;
   }
+  // received → goes back to shipped; everything else advances forward
   const toStage = PIPELINE_NEXT[fromStage];
   if(!toStage) return;
+
+  const isMovingBack = fromStage === 'received';
   const fromKey = fromStage === 'none' ? null : `qty${fromStage.charAt(0).toUpperCase()+fromStage.slice(1)}`;
   const toKey = `qty${toStage.charAt(0).toUpperCase()+toStage.slice(1)}`;
   const availQty = fromStage === 'none'
@@ -3822,7 +3817,6 @@ function advancePipeline(id, fromStage){
     : (item[fromKey]||0);
   if(availQty <= 0) return;
 
-  // Remove any existing popup
   const existing = document.getElementById('pipeline-popup');
   if(existing) existing.remove();
 
@@ -3830,8 +3824,8 @@ function advancePipeline(id, fromStage){
   popup.id = 'pipeline-popup';
   popup.className = 'pipeline-popup';
   popup.innerHTML = `
-    <h4>Advance Pipeline</h4>
-    <div class="pp-desc">Move from <strong>${PIPELINE_LABELS[fromStage]}</strong> → <strong>${PIPELINE_LABELS[toStage]}</strong><br>
+    <h4>${isMovingBack ? '← Move Back' : 'Advance Pipeline'}</h4>
+    <div class="pp-desc">${isMovingBack ? 'Move back from' : 'Move from'} <strong>${PIPELINE_LABELS[fromStage]}</strong> → <strong>${PIPELINE_LABELS[toStage]}</strong><br>
     <span style="font-size:12px;color:var(--text-muted)">${item.task}</span></div>
     <div class="pp-input">
       <span style="font-size:12px;color:var(--text-muted)">Qty:</span>
@@ -3843,7 +3837,6 @@ function advancePipeline(id, fromStage){
       <button class="btn-secondary" onclick="document.getElementById('pipeline-popup').remove()">Cancel</button>
     </div>`;
 
-  // Position near mouse
   popup.style.top = (window.innerHeight/2 - 120) + 'px';
   popup.style.left = (window.innerWidth/2 - 140) + 'px';
   document.body.appendChild(popup);
