@@ -2761,7 +2761,7 @@ function promptUserName(){
             onmouseover="this.style.borderColor='var(--accent)';this.style.background='rgba(59,130,246,.08)'"
             onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface2)'">
             <span>${name}</span>
-            ${ADMIN_MEMBERS.includes(name) ? '<span style="font-size:10px;color:var(--amber);font-family:var(--mono);">ADMIN</span>' : ''}
+            ${ADMIN_MEMBERS.includes(name) ? '' : ''}
           </button>`).join('')}
       </div>
     </div>
