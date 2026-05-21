@@ -2733,8 +2733,7 @@ let countdownTimer = null;
 let lastRemoteHash = '';
 
 const TEAM_MEMBERS = ['Kasey','Linda','Makoto','Priyanka','Chris','Andrew','Maddie','Alex'];
-const ADMIN_MEMBERS = ['Makoto','Priyanka'];
-const ADMIN_PASSWORD = 'wfa#admin';
+const ADMIN_MEMBERS = ['Makoto','Priyanka','Linda'];
 let isAdmin = false;
 
 function loadGhToken(){
@@ -2771,21 +2770,10 @@ function promptUserName(){
 }
 
 function selectUserName(name){
-  // Check if admin member needs password
   if(ADMIN_MEMBERS.includes(name)){
-    const adminKey = localStorage.getItem('bubbles_admin_v2_' + name);
-    if(adminKey === 'granted'){
-      setUserName(name, true);
-    } else {
-      const pwd = prompt(`${name} has admin access.\n\nEnter admin password to unlock full permissions\n(or cancel to sign in with standard access):`);
-      if(pwd === ADMIN_PASSWORD){
-        localStorage.setItem('bubbles_admin_v2_' + name, 'granted');
-        setUserName(name, true);
-        showToast(`✓ Admin access granted for ${name}`, 'green');
-      } else {
-        setUserName(name, false);
-      }
-    }
+    localStorage.setItem('bubbles_admin_v2_' + name, 'granted');
+    setUserName(name, true);
+    showToast(`✓ Signed in as ${name} · Admin access`, 'green');
   } else {
     setUserName(name, false);
   }
@@ -3966,10 +3954,24 @@ function openEditBomMeta(id){
         <button onclick="document.getElementById('bom-meta-modal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px;">×</button>
       </div>
       <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px;">
-        <div style="font-size:13px;color:var(--text-dim);padding:8px 12px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent2);">
-          <strong style="color:var(--text)">${item.task}</strong><br>
-          <span style="font-size:11px;color:var(--text-muted);">Procurement data (cost, qty, vendor, pipeline) is managed by Linda in Excel and syncs automatically.</span>
+        <div style="font-size:13px;color:var(--text-dim);padding:12px;background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent2);">
+          <strong style="color:var(--text);font-size:14px;">${item.task}</strong>
+          ${item.description?`<div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5;">${item.description}</div>`:''}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+            <div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Manufacturer</span><div style="font-size:12px;color:var(--text)">${item.manufacturer||'—'}</div></div>
+            <div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Vendor</span><div style="font-size:12px;color:var(--accent2)">${item.vendor||'—'}</div></div>
+            <div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Part Number</span><div style="font-size:12px;color:var(--text);font-family:var(--mono)">${item.partNumber||'—'}</div></div>
+            <div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Lead Time</span><div style="font-size:12px;color:var(--text)">${item.leadTime?item.leadTime+' BD':'—'}</div></div>
+            <div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Unit Cost</span><div style="font-size:12px;color:var(--text);font-family:var(--mono)">${parseFloat(item.unitCost)?fmtCost(parseFloat(item.unitCost)):'—'}</div></div>
+            <div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Total Qty</span><div style="font-size:12px;color:var(--text);font-family:var(--mono)">${item.qty||'—'}</div></div>
+            <div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Projected</span><div style="font-size:12px;color:var(--text-dim);font-family:var(--mono)">${fmtCost((parseFloat(item.unitCost)||0)*(parseInt(item.qty)||0))}</div></div>
+            <div><span style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;">Amount Spent</span><div style="font-size:12px;color:var(--green);font-family:var(--mono);font-weight:600;">${((item.qtyOrdered||0)+(item.qtyShipped||0)+(item.qtyReceived||0))>0?fmtCost(((item.qtyOrdered||0)+(item.qtyShipped||0)+(item.qtyReceived||0))*(parseFloat(item.unitCost)||0)):'—'}</div></div>
+          </div>
+          ${item.notes?`<div style="margin-top:8px;font-size:11px;color:var(--text-muted);">${item.notes}</div>`:''}
+          <div style="margin-top:8px;font-size:10px;color:var(--text-muted);font-style:italic;">Procurement data synced from Linda's Excel · read only</div>
         </div>
+        <div style="border-top:1px solid var(--border);padding-top:14px;">
+          <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:12px;">Dashboard Metadata — Editable</div>
         <div class="field-group">
           <div class="field-label">Owner / Assigned To</div>
           <select class="field-select" id="bom-meta-owner">
@@ -3986,6 +3988,7 @@ function openEditBomMeta(id){
           <div class="field-label">Linked Gantt Task # <span style="color:var(--text-muted);font-weight:400;">(auto-set by category)</span></div>
           <input class="field-input" id="bom-meta-linked-task" type="text" placeholder="e.g. 141" style="font-family:var(--mono);" value="${item.linkedTaskId||BOM_CATEGORY_TASK_MAP[item.category]||''}">
         </div>
+        </div><!-- end editable section -->
       </div>
       <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;">
         <button class="btn-secondary" onclick="document.getElementById('bom-meta-modal').remove()">Cancel</button>
