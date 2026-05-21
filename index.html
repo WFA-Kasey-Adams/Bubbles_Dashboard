@@ -1134,7 +1134,7 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
 <div id="tab-bom" class="main">
   <div style="margin-bottom:20px;">
     <div style="font-size:22px;font-weight:600;color:var(--text)">Bill of Materials</div>
-    <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">Purchased components & long-lead orders · unit cost × qty = total · synced to Firebase & GitHub</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:3px;">Purchased components & long-lead orders · synced from Linda's Excel · read only</div>
   </div>
   <!-- Status legend -->
   <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;">
@@ -1157,12 +1157,12 @@ body { background: var(--bg); color: var(--text); font-family: var(--sans); min-
   <div class="gantt-wrap">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span class="section-title">Component line items · click any row to edit</span>
+        <span class="section-title">Component line items · click any row for details</span>
         <select id="bom-cat-filter" class="filter-select" style="font-size:11px;padding:4px 8px;" onchange="renderBom()">
           <option value="">All Categories</option>
         </select>
       </div>
-      <button class="toolbar-btn" onclick="openAddBomItem()" id="bom-add-btn" style="color:var(--green);border-color:rgba(16,185,129,.3);display:none;"><span class="icon">＋</span> Add component</button>
+      <span style="font-size:11px;color:var(--text-muted);">To update BOM data contact <a href="mailto:linda@waterfromair.co" style="color:var(--accent2);">Linda</a></span>
     </div>
     <div style="overflow-x:auto;">
       <table class="gantt-table" id="bom-table" style="min-width:1000px;">
@@ -3734,14 +3734,13 @@ function renderBom(){
         const qNone = Math.max(0, qty - qq - qo - qs - qr);
         const spent = (qo + qs + qr) * cost;
 
-        const canAdvance = canEditBom() || fbConfig.user === item.owner;
-        // Pipeline segments — click to advance, shift+click or long description to move back
+        // Pipeline segments — display only, read-only
         let pipeline = '<div class="pipeline-bar">';
         if(qNone > 0) pipeline += `<span class="pipeline-seg seg-none">${qNone} not ordered</span>`;
-        if(qq > 0) pipeline += `<span class="pipeline-seg seg-quoted" ${canAdvance?`onclick="event.stopPropagation();advancePipeline('${item.id}','quoted')" title="→ Move to Ordered"`:'style="cursor:default"'}>${qq} quoted</span>`;
-        if(qo > 0) pipeline += `<span class="pipeline-seg seg-ordered" ${canAdvance?`onclick="event.stopPropagation();advancePipeline('${item.id}','ordered')" title="→ Move to Shipped"`:'style="cursor:default"'}>${qo} ordered</span>`;
-        if(qs > 0) pipeline += `<span class="pipeline-seg seg-shipped" ${canAdvance?`onclick="event.stopPropagation();advancePipeline('${item.id}','shipped')" title="→ Move to Received"`:'style="cursor:default"'}>${qs} shipped</span>`;
-        if(qr > 0) pipeline += `<span class="pipeline-seg seg-received" ${canAdvance?`onclick="event.stopPropagation();advancePipeline('${item.id}','received')" title="← Move back to Shipped"`:''} style="${canAdvance?'':'cursor:default'}">${qr} received</span>`;
+        if(qq > 0) pipeline += `<span class="pipeline-seg seg-quoted" style="cursor:default">${qq} quoted</span>`;
+        if(qo > 0) pipeline += `<span class="pipeline-seg seg-ordered" style="cursor:default">${qo} ordered</span>`;
+        if(qs > 0) pipeline += `<span class="pipeline-seg seg-shipped" style="cursor:default">${qs} shipped</span>`;
+        if(qr > 0) pipeline += `<span class="pipeline-seg seg-received" style="cursor:default">${qr} received</span>`;
         if(qty === 0) pipeline += `<span class="pipeline-seg seg-none">—</span>`;
         pipeline += '</div>';
 
@@ -3753,7 +3752,7 @@ function renderBom(){
         const vendorStr = item.vendor ? `<span style="font-family:var(--mono);font-size:11px;color:var(--accent2)">${item.vendor}</span>` : `<span style="color:var(--text-muted);font-size:11px;">—</span>`;
         const leadStr = item.leadTime ? `<span style="font-family:var(--mono);font-size:11px;">${item.leadTime}</span>` : `<span style="color:var(--text-muted)">—</span>`;
 
-        html += `<tr style="cursor:pointer" onclick="openEditBomItem('${item.id}')">
+        html += `<tr style="cursor:pointer" onclick="openBomInfo('${item.id}')">
           <td class="task-id" style="font-size:11px;font-family:var(--mono);color:var(--text-muted);">${item.id}</td>
           <td class="task-name">${item.task}${linkedBadge}${partSub}${latestNote?`<div style="font-size:10px;color:var(--text-muted);margin-top:2px;line-height:1.4">${latestNote}</div>`:''}</td>
           <td><span class="owner-badge ${ownerClass(item.owner||'Unassigned')}">${item.owner||'—'}</span></td>
@@ -3763,7 +3762,7 @@ function renderBom(){
           <td style="text-align:right;font-family:var(--mono);font-size:11px">${cost?fmtCost(cost):'<span style="color:var(--text-muted)">—</span>'}</td>
           <td style="text-align:right;font-family:var(--mono);font-size:11px;color:var(--text-dim)">${projected?fmtCost(projected):'—'}</td>
           <td style="text-align:right;font-family:var(--mono);font-size:11px;color:${spent?'var(--green)':'var(--text-muted)'}">${spent?fmtCost(spent):'—'}</td>
-          <td><button class="delete-btn" onclick="event.stopPropagation();deleteBomItem('${item.id}')" title="Delete">✕</button></td>
+          <td></td>
         </tr>`;
       }
     }
@@ -3881,6 +3880,73 @@ function resetBomToSeed(){
   saveBom();
   renderBom();
   showToast('✓ BOM reset to seed data from spreadsheet', 'green', 3000);
+}
+
+function openBomInfo(id){
+  const item = bomItems.find(i=>String(i.id)===String(id));
+  if(!item) return;
+  const existing = document.getElementById('bom-info-popup');
+  if(existing) existing.remove();
+
+  const qty = parseInt(item.qty)||0;
+  const cost = parseFloat(item.unitCost)||0;
+  const projected = fmtCost(qty * cost);
+  const spentQty = (item.qtyOrdered||0)+(item.qtyShipped||0)+(item.qtyReceived||0);
+  const spent = spentQty > 0 ? fmtCost(spentQty * cost) : '—';
+
+  const popup = document.createElement('div');
+  popup.id = 'bom-info-popup';
+  popup.style.cssText = `position:fixed;z-index:600;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:420px;max-width:95vw;max-height:80vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.5);top:50%;left:50%;transform:translate(-50%,-50%);`;
+  popup.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;">BOM Item #${item.id}</div>
+      <button onclick="document.getElementById('bom-info-popup').remove()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1;padding:2px 6px;">×</button>
+    </div>
+    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;">${item.task}</div>
+    ${item.description?`<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">${item.description}</div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Manufacturer</div>
+        <div style="font-size:13px;color:var(--text)">${item.manufacturer||'—'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Vendor</div>
+        <div style="font-size:13px;color:var(--accent2)">${item.vendor||'—'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Part Number</div>
+        <div style="font-size:12px;color:var(--text);font-family:var(--mono)">${item.partNumber||'—'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Lead Time</div>
+        <div style="font-size:13px;color:var(--text)">${item.leadTime?item.leadTime+' BD':'—'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Unit Cost</div>
+        <div style="font-size:13px;color:var(--text);font-family:var(--mono)">${cost?fmtCost(cost):'—'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Total Qty</div>
+        <div style="font-size:13px;color:var(--text);font-family:var(--mono)">${qty||'—'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Projected Cost</div>
+        <div style="font-size:13px;color:var(--text-dim);font-family:var(--mono)">${projected}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;">
+        <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Amount Spent</div>
+        <div style="font-size:13px;color:var(--green);font-family:var(--mono);font-weight:600;">${spent}</div>
+      </div>
+    </div>
+    ${item.notes?`<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:12px;"><div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Notes</div><div style="font-size:12px;color:var(--text-dim);line-height:1.5;">${item.notes}</div></div>`:''}
+    <div style="font-size:11px;color:var(--text-muted);text-align:center;">To update this item contact <a href="mailto:linda@waterfromair.co" style="color:var(--accent2);">Linda</a></div>`;
+
+  document.body.appendChild(popup);
+  // Close on outside click
+  setTimeout(()=>document.addEventListener('click', function handler(e){
+    const p = document.getElementById('bom-info-popup');
+    if(p && !p.contains(e.target)){ p.remove(); document.removeEventListener('click', handler); }
+  }), 100);
 }
 
 function canEditBom(){
